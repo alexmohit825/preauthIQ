@@ -152,7 +152,8 @@ body { font-family: 'Inter', sans-serif; background-color: #f8f4f1; color: #1e29
       <!-- CARRIER CATEGORY FILTER TABS -->
       <div class="md:col-span-12 flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-100 text-xs">
         <span class="font-bold text-slate-500 text-[11px] uppercase mr-1">Quick Sector:</span>
-        <button type="button" onclick="filterPayerSector('all')" class="sector-tab-btn active px-2.5 py-1 rounded-lg font-semibold bg-blue-600 text-white shadow-sm transition" data-sector="all">All Carriers (65+)</button>
+        <button type="button" onclick="filterPayerSector('all')" class="sector-tab-btn active px-2.5 py-1 rounded-lg font-semibold bg-blue-600 text-white shadow-sm transition" data-sector="all">All Carriers (75+)</button>
+        <button type="button" onclick="filterPayerSector('pnw')" class="sector-tab-btn px-2.5 py-1 rounded-lg font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition" data-sector="pnw">🌲 Washington & Oregon (PNW)</button>
         <button type="button" onclick="filterPayerSector('engines')" class="sector-tab-btn px-2.5 py-1 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" data-sector="engines">⚡ Carelon / InterQual / MCG</button>
         <button type="button" onclick="filterPayerSector('commercial')" class="sector-tab-btn px-2.5 py-1 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" data-sector="commercial">🏥 Commercial & Blues</button>
         <button type="button" onclick="filterPayerSector('medicare')" class="sector-tab-btn px-2.5 py-1 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" data-sector="medicare">🏛️ Medicare & MA</button>
@@ -1468,6 +1469,148 @@ const INSURERS = {
     priorAuthPhone: '1-800-252-2021',
     guidelineSource: 'Carelon Musculoskeletal Guidelines (formerly AIM Specialty Health)',
   },
+  // === PACIFIC NORTHWEST (WASHINGTON & OREGON) SPECIALIZED PAYERS ===
+  regence_or: {
+    name: 'Regence BlueCross BlueShield of Oregon',
+    group: 'Blue Cross Blue Shield Plans',
+    policyNumber: 'Medical Policy 7.01.131 (Spine Surgery)',
+    medicalNecessityDef: 'Evidence of specific spinal pathology directly responsible for symptoms with refractory course following conservative care. Follows Cambia Health / Regence medical policies across Oregon.',
+    conservativeDuration: '6 weeks for decompression; 12 weeks for fusion',
+    ptRequired: 'Supervised active physical therapy and multimodal medical management',
+    imagingRequired: 'MRI or CT confirming neural compression; standing flexion/extension radiographs for fusion',
+    functionalScores: 'Oswestry Disability Index (ODI >= 40%) or Neck Disability Index (NDI)',
+    waivers: 'Acute cauda equina, progressive motor weakness (Grade <= 3/5), progressive myelopathy',
+    portalUrl: 'https://www.regence.com/providers',
+    priorAuthPhone: '1-888-367-2109',
+    guidelineSource: 'Regence BlueCross BlueShield of Oregon Medical Policy 7.01.131',
+  },
+  asuris: {
+    name: 'Asuris Northwest Health (Eastern Washington)',
+    group: 'Blue Cross Blue Shield Plans',
+    policyNumber: 'Medical Policy 7.01.131 (Regence Affiliate)',
+    medicalNecessityDef: 'Medically necessary when clinical symptoms correlate with diagnostic imaging and conservative care fails. Asuris is the Cambia/Regence affiliate serving Eastern Washington (Spokane, Tri-Cities, Walla Walla, Yakima).',
+    conservativeDuration: '6 weeks for decompression; 12 weeks for fusion',
+    ptRequired: 'Documented completion of 6-12 weeks active physical therapy and medication trials',
+    imagingRequired: 'MRI of affected spine. Dynamic flexion/extension radiographs for fusion.',
+    functionalScores: 'Validated functional outcome metrics (ODI/VAS)',
+    waivers: 'Progressive neurological deficits, cauda equina, acute fracture',
+    portalUrl: 'https://www.asuris.com/providers',
+    priorAuthPhone: '1-888-367-2108',
+    guidelineSource: 'Asuris Northwest Health / Regence Medical Policy 7.01.131',
+  },
+  kp_wa_nw: {
+    name: 'Kaiser Permanente Northwest & WA (KPWA)',
+    group: 'Universal Decision Support & TPAs',
+    policyNumber: 'KPWA Clinical Review Criteria (Musculoskeletal)',
+    medicalNecessityDef: 'Services clinically appropriate and necessary per Kaiser Foundation Health Plan of the Northwest and Kaiser Permanente Washington clinical review criteria. Requires clinical and radiographic concordance after structured conservative management.',
+    conservativeDuration: '3+ months documented multimodal conservative care',
+    ptRequired: 'Integrated physical therapy, physiatry, and multimodal pain management trials',
+    imagingRequired: 'High resolution MRI or CT confirming spinal pathology matching exam findings',
+    functionalScores: 'Documented functional and occupational limitations in daily living',
+    waivers: 'Cauda equina syndrome, progressive neurological deficits (Grade <= 3/5), acute trauma',
+    portalUrl: 'https://providers.kaiserpermanente.org',
+    priorAuthPhone: '1-888-767-4670 (KPWA) / 1-800-813-2000 (KPNW)',
+    guidelineSource: 'KPWA / KPNW Clinical Practice Guidelines & MCG Reference',
+  },
+  moda: {
+    name: 'Moda Health (Oregon & Washington)',
+    group: 'National Commercial',
+    policyNumber: 'Moda Medical Necessity Criteria (Spine Surgery)',
+    medicalNecessityDef: 'Medically necessary services consistent with accepted standards of medical practice in the Pacific Northwest. Uses MCG guidelines and Moda medical policy criteria for commercial and Medicare Advantage members across OR and WA.',
+    conservativeDuration: '6-12 weeks documented non-operative care',
+    ptRequired: 'Active physical therapy with licensed therapist, NSAID/analgesic trial, and spinal injections where indicated',
+    imagingRequired: 'MRI or CT demonstrating severe stenosis, disc herniation, or dynamic instability',
+    functionalScores: 'Validated functional outcome measures (ODI >= 40%, VAS >= 6/10)',
+    waivers: 'Progressive motor deficit, acute cauda equina syndrome, progressive myelopathy',
+    portalUrl: 'https://www.modahealth.com/providers',
+    priorAuthPhone: '1-888-788-9821',
+    guidelineSource: 'Moda Health Medical Necessity Guidelines / MCG Criteria',
+  },
+  pacificsource: {
+    name: 'PacificSource Health Plans (OR / WA / ID / MT)',
+    group: 'National Commercial',
+    policyNumber: 'PacificSource Clinical Policy (Spinal Surgery)',
+    medicalNecessityDef: 'Requires objective anatomical correlation on cross-sectional imaging matching physical exam, failure of comprehensive conservative modalities, and documented functional limitation.',
+    conservativeDuration: '6 weeks for decompression; 12 weeks for fusion',
+    ptRequired: 'Structured physical therapy, medication management, and interventional spinal injection trials',
+    imagingRequired: 'MRI or CT confirming neural compression; flexion/extension X-rays for spondylolisthesis/instability',
+    functionalScores: 'Documented functional impairment (ODI/NDI, VAS)',
+    waivers: 'Cauda equina syndrome, progressive motor weakness (Grade <= 3/5), acute trauma',
+    portalUrl: 'https://pacificsource.com/providers',
+    priorAuthPhone: '1-888-691-8209',
+    guidelineSource: 'PacificSource Clinical Policies & MCG Guidelines',
+  },
+  first_choice: {
+    name: 'First Choice Health Network (FCH PPO - WA / OR / PNW)',
+    group: 'Universal Decision Support & TPAs',
+    policyNumber: 'First Choice Health Medical Management Criteria',
+    medicalNecessityDef: 'Care that is reasonable, necessary, and appropriate for the diagnosis or treatment of illness or injury for self-funded employer plans throughout the Pacific Northwest. Follows InterQual and MCG review standards.',
+    conservativeDuration: '6-12 weeks non-operative management',
+    ptRequired: 'Documented active physical therapy and medical management',
+    imagingRequired: 'MRI or CT confirming surgical pathology corresponding with examination',
+    functionalScores: 'Documented impairment in activities of daily living',
+    waivers: 'Progressive neurological deficits, cauda equina syndrome',
+    portalUrl: 'https://www.fchn.com/providers',
+    priorAuthPhone: '1-800-231-6935',
+    guidelineSource: 'First Choice Health Utilization Management / InterQual',
+  },
+  saif_or: {
+    name: 'SAIF Corporation / Oregon Workers\' Comp (OAR 436-010)',
+    group: 'Workers\' Compensation & State Funds',
+    policyNumber: 'Oregon Workers\' Compensation Division Medical Services Rules (OAR 436-010)',
+    medicalNecessityDef: 'Treatment must be directly related to the accepted compensable work injury in Oregon under ORS 656.245 and OAR 436-010. Must be curative or materially relieve the condition caused by the accepted industrial condition. SAIF is Oregon state-chartered workers compensation insurer covering over 50% of Oregon employers.',
+    conservativeDuration: '6 weeks active PT for decompression; 12 weeks structured care for fusion',
+    ptRequired: 'Active physical therapy with objective functional goals, work conditioning, and documented pain/medication trials. Active nicotine cessation required for fusion.',
+    imagingRequired: 'MRI or CT correlating precisely with accepted compensable injury mechanism and dermatomal findings',
+    functionalScores: 'Objective functional outcome scores (ODI >= 40%) and work capability assessments',
+    waivers: 'Acute cauda equina syndrome, rapidly progressing neurological deficit (Grade <= 3/5), acute spinal fracture/dislocation',
+    portalUrl: 'https://www.saif.com/employer/medical-providers.html',
+    priorAuthPhone: '1-800-285-8525',
+    guidelineSource: 'Oregon Administrative Rules OAR 436-010; ORS 656.245; SAIF Practice Guidelines',
+  },
+  ohp_herc: {
+    name: 'Oregon Health Plan (OHP / HERC Prioritized List)',
+    group: 'State Medicaid & MCOs',
+    policyNumber: 'OHP Prioritized List of Health Services / HERC Guideline Notes 56 & 37',
+    medicalNecessityDef: 'Oregon Health Plan (Medicaid) coverage is governed by the Health Evidence Review Commission (HERC) Prioritized List of Health Services under OAR 410-141. Surgical decompression/fusion is covered on prioritized diagnostic lines when HERC Guideline Notes (Guideline Note 56 for Lumbar Spine, Note 37 for Cervical) criteria are strictly satisfied.',
+    conservativeDuration: 'Minimum 6 weeks for decompression; 12 weeks for fusion per HERC Guideline Note 56',
+    ptRequired: 'Documented active physical therapy, medication management (NSAIDs/analgesics), and functional outcome scores',
+    imagingRequired: 'MRI or CT confirming neural compression; standing dynamic radiographs confirming instability for fusion',
+    functionalScores: 'Validated functional measures (Oswestry Disability Index ODI >= 40%, VAS >= 6/10)',
+    waivers: 'Progressive motor deficit (Grade <= 3/5), cauda equina syndrome, cervical myelopathy (HERC emergency waiver)',
+    portalUrl: 'https://www.oregon.gov/oha/HSD/OHP/Pages/Providers.aspx',
+    priorAuthPhone: '1-800-336-6016',
+    guidelineSource: 'Oregon Health Authority (OHA) / HERC Prioritized List Guideline Notes 56 & 37',
+  },
+  careoregon: {
+    name: 'CareOregon / Health Share of Oregon (Medicaid CCO)',
+    group: 'State Medicaid & MCOs',
+    policyNumber: 'Health Share of Oregon / CareOregon Utilization Guidelines / HERC Standards',
+    medicalNecessityDef: 'Services clinically appropriate and medically necessary for Oregon Health Plan members enrolled in CareOregon and Health Share of Oregon (Clackamas, Multnomah, and Washington counties). Follows HERC Prioritized List and MCG criteria.',
+    conservativeDuration: '6-12 weeks conservative treatment per HERC guidelines',
+    ptRequired: 'Documented physical therapy program and multimodal medical care',
+    imagingRequired: 'MRI or CT demonstrating neural impingement matching clinical exam',
+    functionalScores: 'Functional limitations documented with validated metrics',
+    waivers: 'Progressive motor deficit, acute cauda equina syndrome, cervical myelopathy',
+    portalUrl: 'https://www.careoregon.org/providers',
+    priorAuthPhone: '1-800-224-4840',
+    guidelineSource: 'CareOregon / Health Share CCO Clinical Guidelines & HERC Prioritized List',
+  },
+  samaritan: {
+    name: 'Samaritan Health Plans (Oregon / IHN-CCO)',
+    group: 'State Medicaid & MCOs',
+    policyNumber: 'Samaritan Medical Policies / InterCommunity Health Network CCO',
+    medicalNecessityDef: 'Medically necessary when clinical symptoms correlate with diagnostic imaging and conservative care has failed. Serves Benton, Lincoln, and Linn counties in Oregon (Commercial, Medicare Advantage, and IHN-CCO Medicaid).',
+    conservativeDuration: '6 weeks for decompression; 12 weeks for fusion',
+    ptRequired: 'Supervised active physical therapy and medical management',
+    imagingRequired: 'MRI or CT demonstrating surgical pathology matching clinical exam',
+    functionalScores: 'Documented functional outcome metrics (ODI/VAS)',
+    waivers: 'Progressive motor deficit, cauda equina, acute fracture',
+    portalUrl: 'https://samhealth.org/health-plans/providers',
+    priorAuthPhone: '1-800-832-4580',
+    guidelineSource: 'Samaritan Health Plans Clinical Policies & HERC/MCG Guidelines',
+  },
+
 interqual: {
     name: 'InterQual Criteria (Change Healthcare / Optum)',
     group: 'Major Utilization Engines (Carelon, InterQual, MCG)',
@@ -2358,6 +2501,20 @@ function handleCustomPlanNameChange() {
 
 // 100+ CARRIER KNOWLEDGE BASE FOR INSTANT AUTO-RESOLVER
 const CARRIER_KNOWLEDGE_INDEX = {
+  'regence oregon': { name: 'Regence BlueCross BlueShield of Oregon', policy: 'Medical Policy 7.01.131', group: 'Blue Cross Blue Shield Plans', conservative: '6 weeks for decompression; 12 weeks for fusion', phone: '1-888-367-2109' },
+  'asuris': { name: 'Asuris Northwest Health (Eastern WA)', policy: 'Medical Policy 7.01.131', group: 'Blue Cross Blue Shield Plans', conservative: '6 weeks for decompression; 12 weeks for fusion', phone: '1-888-367-2108' },
+  'moda': { name: 'Moda Health (Oregon & WA)', policy: 'Moda Medical Necessity Criteria', group: 'National Commercial', conservative: '6-12 weeks documented non-operative care', phone: '1-888-788-9821' },
+  'pacificsource': { name: 'PacificSource Health Plans', policy: 'PacificSource Clinical Policy', group: 'National Commercial', conservative: '6 weeks decompression; 12 weeks fusion', phone: '1-888-691-8209' },
+  'saif': { name: 'SAIF Corporation (Oregon Workers Comp)', policy: 'Oregon OAR 436-010 / ORS 656.245', group: 'Workers\' Compensation & State Funds', conservative: '6 weeks PT for decompression; 12 weeks for fusion', phone: '1-800-285-8525' },
+  'oregon health plan': { name: 'Oregon Health Plan (OHP / HERC)', policy: 'HERC Prioritized List Guideline Notes 56 & 37', group: 'State Medicaid & MCOs', conservative: '6 weeks decompression; 12 weeks fusion per HERC', phone: '1-800-336-6016' },
+  'ohp': { name: 'Oregon Health Plan (OHP / HERC)', policy: 'HERC Prioritized List Guideline Notes 56 & 37', group: 'State Medicaid & MCOs', conservative: '6 weeks decompression; 12 weeks fusion per HERC', phone: '1-800-336-6016' },
+  'careoregon': { name: 'CareOregon / Health Share of Oregon (CCO)', policy: 'CareOregon / HERC Prioritized List', group: 'State Medicaid & MCOs', conservative: '6-12 weeks per HERC guidelines', phone: '1-800-224-4840' },
+  'health share': { name: 'Health Share of Oregon (Medicaid CCO)', policy: 'Health Share / HERC Standards', group: 'State Medicaid & MCOs', conservative: '6-12 weeks per HERC guidelines', phone: '1-800-224-4840' },
+  'first choice': { name: 'First Choice Health Network (FCH PPO)', policy: 'First Choice Health Criteria / InterQual', group: 'Universal Decision Support & TPAs', conservative: '6-12 weeks non-operative management', phone: '1-800-231-6935' },
+  'samaritan': { name: 'Samaritan Health Plans (Oregon / IHN-CCO)', policy: 'Samaritan Medical Policies / HERC', group: 'State Medicaid & MCOs', conservative: '6 weeks decompression; 12 weeks fusion', phone: '1-800-832-4580' },
+  'kaiser northwest': { name: 'Kaiser Permanente Northwest & WA (KPWA)', policy: 'KPWA Clinical Review Criteria', group: 'Universal Decision Support & TPAs', conservative: '3+ months multimodal conservative care', phone: '1-888-767-4670' },
+  'kpwa': { name: 'Kaiser Permanente Washington (KPWA)', policy: 'KPWA Clinical Review Criteria', group: 'Universal Decision Support & TPAs', conservative: '3+ months multimodal conservative care', phone: '1-888-767-4670' },
+
   'carelon': { name: 'Carelon Medical Benefits Management', policy: 'Carelon Musculoskeletal Guidelines (AIM)', group: 'Major Utilization Engines (Carelon, InterQual, MCG)', conservative: '12 weeks for fusion; 6 weeks for decompression', phone: '1-800-252-2021' },
   'aim': { name: 'Carelon Medical Benefits Management (AIM)', policy: 'Carelon Spine Surgery Guidelines', group: 'Major Utilization Engines (Carelon, InterQual, MCG)', conservative: '12 weeks for fusion; 6 weeks for decompression', phone: '1-800-252-2021' },
   'interqual': { name: 'InterQual Criteria (Change Healthcare / Optum)', policy: 'InterQual Musculoskeletal Level of Care', group: 'Major Utilization Engines (Carelon, InterQual, MCG)', conservative: '6-12 weeks documented non-operative care', phone: 'Refer to payer contract' },
@@ -2451,7 +2608,10 @@ populatePayerDropdown = function() {
   for (const [key, val] of Object.entries(INSURERS)) {
     // Check filter
     let include = true;
-    if (activeSectorFilter === 'engines') {
+    if (activeSectorFilter === 'pnw') {
+      const pnwKeys = ['premera', 'regence', 'regence_or', 'asuris', 'wa_ump', 'wa_li', 'saif_or', 'wa_apple_health_chpw', 'wa_apple_health_coordinated', 'wa_wellpoint', 'molina', 'ohp_herc', 'careoregon', 'samaritan', 'kp_wa_nw', 'moda', 'pacificsource', 'first_choice', 'wa_lifewise', 'wa_bridgespan', 'providence'];
+      include = pnwKeys.includes(key);
+    } else if (activeSectorFilter === 'engines') {
       include = val.group.includes('Major Utilization') || key === 'carelon' || key === 'interqual' || key === 'mcg';
     } else if (activeSectorFilter === 'commercial') {
       include = val.group.includes('Commercial') || val.group.includes('Blue Cross');
