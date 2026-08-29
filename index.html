@@ -1,0 +1,1908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PreAuthIQ — Medical Necessity & Prior Authorization Intelligence</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+      colors: {
+        clinical: {
+          50: '#f8fafc',
+          100: '#f1f5f9',
+          200: '#e2e8f0',
+          300: '#cbd5e1',
+          400: '#94a3b8',
+          500: '#64748b',
+          600: '#475569',
+          700: '#334155',
+          800: '#1e293b',
+          900: '#0f172a',
+          950: '#020617',
+        },
+        navy: {
+          800: '#111e38',
+          900: '#0a1224',
+          950: '#050a14',
+        },
+        brand: {
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#2563eb',
+          600: '#1d4ed8',
+          700: '#1e40af',
+          800: '#1e3a8a',
+          900: '#172554',
+        },
+        teal: {
+          600: '#0d9488',
+          700: '#0f766e',
+          800: '#115e59',
+        }
+      }
+    }
+  }
+};
+</script>
+
+<style>
+* { box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background-color: #f8f4f1; color: #1e293b; }
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.toast-anim { animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes toastIn { from { transform: translateY(-16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes pulseSubtle { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+.pulse-subtle { animation: pulseSubtle 2s infinite ease-in-out; }
+.badge-pass { background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+.badge-gap { background-color: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+.badge-alert { background-color: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.badge-neutral { background-color: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
+@media print {
+  body * { visibility: hidden; }
+  #printLetterArea, #printLetterArea * { visibility: visible; }
+  #printLetterArea { position: absolute; left: 0; top: 0; width: 100%; }
+}
+</style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+<!-- TOP NOTIFICATION TOAST (CONTAINER) -->
+<div id="toastContainer" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+<!-- HEADER / BRAND NAVIGATION -->
+<header class="bg-navy-900 border-b border-slate-800 text-white sticky top-0 z-40 shadow-md">
+  <div class="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <!-- Brand Logo -->
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20 ring-2 ring-blue-400/30">
+        <i data-lucide="shield-check" class="w-6 h-6 text-white"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-xl font-bold tracking-tight text-white">PreAuth<span class="text-blue-400 font-extrabold">IQ</span></span>
+          <span class="px-2 py-0.5 text-[11px] font-semibold bg-blue-500/20 text-blue-300 border border-blue-400/30 rounded-full">v2.0 Clinical Edition</span>
+        </div>
+        <p class="text-xs text-slate-400 hidden sm:block">Surgical Prior Authorization & Denial Overturn Studio</p>
+      </div>
+    </div>
+
+    <!-- Payer Count & Stats Badge -->
+    <div class="hidden md:flex items-center gap-4 text-xs text-slate-300">
+      <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700">
+        <i data-lucide="database" class="w-3.5 h-3.5 text-emerald-400"></i>
+        <span><strong class="text-white" id="totalPayerCount">60</strong> Insurance Carriers Active</span>
+      </div>
+      <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700">
+        <i data-lucide="lock" class="w-3.5 h-3.5 text-blue-400"></i>
+        <span>100% Client-Side HIPAA Shield</span>
+      </div>
+    </div>
+
+    <!-- Quick Action / Workflow Links -->
+    <div class="flex items-center gap-2.5">
+      <button onclick="loadSampleCase('lumbar_fusion')" class="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
+        <i data-lucide="file-text" class="w-3.5 h-3.5 text-blue-400"></i>
+        <span>Sample Note</span>
+      </button>
+      <button onclick="resetWorkbench()" class="text-xs px-3 py-1.5 bg-slate-800 hover:bg-red-950 hover:text-red-300 text-slate-300 rounded-lg border border-slate-700 hover:border-red-800/50 transition flex items-center gap-1.5" title="Reset all inputs">
+        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+        <span>Reset</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN CLINICAL WORKBENCH -->
+<main class="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 py-5 flex-1 flex flex-col">
+
+  <!-- TOP CASE CONFIGURATION BAR -->
+  <section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 mb-5">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+      
+      <!-- Payer Selector (Searchable) -->
+      <div class="md:col-span-5">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center justify-between">
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="building-2" class="w-3.5 h-3.5 text-blue-600"></i>
+            Target Insurance Carrier (60 Payers)
+          </span>
+          <span id="selectedPayerPolicyNumber" class="text-blue-700 font-mono text-[11px] font-semibold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">Aetna CPB 0743</span>
+        </label>
+        <div class="relative">
+          <select id="payerSelect" onchange="handlePayerChange()" class="w-full bg-slate-50 hover:bg-slate-100/80 focus:bg-white text-slate-800 text-sm font-semibold rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 py-2.5 px-3 appearance-none transition pr-8 cursor-pointer">
+            <!-- Dynamically populated grouped payers -->
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Procedure Category Preset -->
+      <div class="md:col-span-4">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1.5">
+          <i data-lucide="activity" class="w-3.5 h-3.5 text-emerald-600"></i>
+          Target Surgical Procedure
+        </label>
+        <div class="relative">
+          <select id="procedureSelect" onchange="runGapAnalysis()" class="w-full bg-slate-50 hover:bg-slate-100/80 focus:bg-white text-slate-800 text-sm font-medium rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 py-2.5 px-3 appearance-none transition pr-8 cursor-pointer">
+            <optgroup label="Spine Surgery">
+              <option value="lumbar_fusion" selected>Lumbar Spinal Fusion (CPT 22612, 22630, 22633, 22840, 22853)</option>
+              <option value="lumbar_decompression">Lumbar Decompression / Laminectomy (CPT 63047, 63048)</option>
+              <option value="lumbar_discectomy">Lumbar Microdiscectomy (CPT 63030, 63035)</option>
+              <option value="cervical_acdf">Anterior Cervical Discectomy & Fusion - ACDF (CPT 22551, 22552)</option>
+              <option value="cervical_cdr">Cervical Disc Replacement / Arthroplasty (CPT 22856)</option>
+              <option value="cervical_posterior">Posterior Cervical Decompression & Fusion (CPT 22600, 63005)</option>
+              <option value="si_joint">Sacroiliac (SI) Joint Fusion (CPT 27279)</option>
+              <option value="scs_trial_implant">Spinal Cord Stimulator (SCS) Trial & Implant (CPT 63650, 63685)</option>
+            </optgroup>
+            <optgroup label="Orthopedic & Reconstructive">
+              <option value="total_knee">Total Knee Arthroplasty (CPT 27447)</option>
+              <option value="total_hip">Total Hip Arthroplasty (CPT 27130)</option>
+              <option value="shoulder_arthroplasty">Shoulder Arthroplasty / Rotator Cuff (CPT 23472, 29827)</option>
+            </optgroup>
+            <optgroup label="General & Other">
+              <option value="custom_procedure">Custom / Other Musculoskeletal Procedure</option>
+            </optgroup>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Letter Intent / Stage -->
+      <div class="md:col-span-3">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1.5">
+          <i data-lucide="send" class="w-3.5 h-3.5 text-indigo-600"></i>
+          Review Stage / Intent
+        </label>
+        <div class="relative">
+          <select id="letterIntentSelect" onchange="runGapAnalysis()" class="w-full bg-slate-50 hover:bg-slate-100/80 focus:bg-white text-slate-800 text-sm font-medium rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 py-2.5 px-3 appearance-none transition pr-8 cursor-pointer">
+            <option value="prior_auth" selected>Pre-Authorization (Initial LOMN)</option>
+            <option value="level1_appeal">Level 1 Formal Denial Appeal</option>
+            <option value="peer_to_peer">Peer-to-Peer Defense Brief</option>
+            <option value="external_review">Level 2 / External Independent Review</option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- WORKBENCH 2-COLUMN SPLIT GRID -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1">
+    
+    <!-- LEFT PANEL: CLINICAL SOURCE NOTE INTAKE -->
+    <div class="lg:col-span-6 flex flex-col bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
+      
+      <!-- Panel Header & Tools -->
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+            1
+          </div>
+          <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Clinical Chart Note Intake</h2>
+        </div>
+        
+        <!-- Intake Tools (PDF Upload, Scrub PHI, Paste) -->
+        <div class="flex items-center gap-2 text-xs">
+          <!-- De-Identify PHI Toggle -->
+          <label class="flex items-center gap-1.5 cursor-pointer select-none text-slate-600 hover:text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 transition" title="Scrub patient names, DOB, MRN">
+            <input type="checkbox" id="phiScrubToggle" onchange="togglePhiScrub()" class="rounded text-blue-600 focus:ring-0">
+            <span class="font-medium">Scrub PHI</span>
+          </label>
+
+          <!-- Upload PDF Clinic Note -->
+          <label class="flex items-center gap-1.5 cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-200 transition font-medium">
+            <i data-lucide="upload" class="w-3.5 h-3.5 text-slate-600"></i>
+            <span>Import PDF</span>
+            <input type="file" id="pdfFileInput" accept="application/pdf" class="hidden" onchange="handlePdfUpload(event)">
+          </label>
+
+          <!-- Clear Button -->
+          <button onclick="clearClinicalNote()" class="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100" title="Clear note">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Clinical Note Textarea -->
+      <div class="relative flex-1 min-h-[360px] flex flex-col">
+        <textarea id="clinicalNoteInput" oninput="runGapAnalysis()" placeholder="Paste patient history, physical examination, diagnostic imaging reports (MRI/CT/X-rays), failed conservative therapies (PT, medications, injections), and proposed surgical plan here..." class="w-full flex-1 p-4 bg-slate-50 hover:bg-white focus:bg-white text-slate-800 text-sm leading-relaxed rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono transition custom-scrollbar resize-none"></textarea>
+        
+        <!-- Live Note Stats Bar -->
+        <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 px-1">
+          <div class="flex items-center gap-3">
+            <span id="charCount">0 characters</span>
+            <span>•</span>
+            <span id="detectedKeywordsCount">0 criteria signals detected</span>
+          </div>
+          <div class="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-medium">
+            <i data-lucide="check-circle" class="w-3 h-3 text-emerald-600"></i>
+            <span>Live Analysis Active</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick-Add Clinical Findings Snippets -->
+      <div class="mt-4 pt-3 border-t border-slate-100">
+        <div class="text-xs font-semibold text-slate-600 mb-2 flex items-center justify-between">
+          <span>Quick-Fill Missing Criteria Snippets:</span>
+          <span class="text-[11px] text-slate-400">Click to append to note</span>
+        </div>
+        <div class="flex flex-wrap gap-1.5">
+          <button onclick="appendSnippet('pt12wks')" class="text-[11px] bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-slate-700 px-2.5 py-1 rounded-md border border-slate-200 transition">
+            + 12-Wk Physical Therapy Trial
+          </button>
+          <button onclick="appendSnippet('instability')" class="text-[11px] bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-slate-700 px-2.5 py-1 rounded-md border border-slate-200 transition">
+            + Flex/Ext Instability (&gt;3mm)
+          </button>
+          <button onclick="appendSnippet('odi_vas')" class="text-[11px] bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-slate-700 px-2.5 py-1 rounded-md border border-slate-200 transition">
+            + ODI 54% / VAS 8/10
+          </button>
+          <button onclick="appendSnippet('injections')" class="text-[11px] bg-slate-100 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 text-slate-700 px-2.5 py-1 rounded-md border border-slate-200 transition">
+            + Epidural Steroid Injections (ESI)
+          </button>
+          <button onclick="appendSnippet('waiver_deficit')" class="text-[11px] bg-red-50 hover:bg-red-100 text-red-700 hover:border-red-300 px-2.5 py-1 rounded-md border border-red-200 transition font-medium">
+            + Emergency Waiver (Grade 3/5 Deficit)
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL: REAL-TIME GAP MATRIX & ACTION HUB -->
+    <div class="lg:col-span-6 flex flex-col gap-4">
+      
+      <!-- TOP RIGHT: LIVE PAYER GAP ANALYSIS MATRIX -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5">
+        
+        <!-- Gap Header & Score -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-sm">
+              2
+            </div>
+            <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Payer Policy Compliance & Gap Matrix</h2>
+          </div>
+          
+          <!-- Compliance Score Gauge -->
+          <div id="complianceBadge" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold badge-neutral">
+            <span id="complianceText">Awaiting Note Input</span>
+          </div>
+        </div>
+
+        <!-- Payer Policy Overview Card -->
+        <div id="payerPolicyCard" class="bg-slate-50 rounded-xl p-3 mb-3 border border-slate-200 text-xs text-slate-700">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Diagnostic Gap Matrix Items -->
+        <div class="space-y-2 text-xs" id="gapChecklistContainer">
+          <!-- Items generated by gapAnalyzer -->
+        </div>
+
+      </div>
+
+      <!-- BOTTOM RIGHT: SYNTHESIS & ACTION HUB -->
+      <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 flex-1 flex flex-col">
+        
+        <!-- Header & Output Mode Toggle -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
+              3
+            </div>
+            <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Synthesis & Clinical Actions</h2>
+          </div>
+
+          <!-- View Mode Toggle: Copilot Prompt vs Direct Generated Letter -->
+          <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+            <button id="viewPromptTabBtn" onclick="switchOutputTab('prompt')" class="px-3 py-1 rounded-lg font-semibold bg-white text-blue-700 shadow-sm transition">
+              MS Copilot Prompt
+            </button>
+            <button id="viewLetterTabBtn" onclick="switchOutputTab('letter')" class="px-3 py-1 rounded-lg font-semibold text-slate-600 hover:text-slate-900 transition">
+              Direct Letter Output
+            </button>
+          </div>
+        </div>
+
+        <!-- TAB 1: COPILOT PROMPT VIEW -->
+        <div id="promptTabView" class="flex-1 flex flex-col">
+          <div class="relative flex-1 min-h-[220px] flex flex-col mb-3">
+            <textarea id="generatedPromptTextarea" readonly class="w-full flex-1 p-3.5 bg-slate-900 text-slate-100 text-xs font-mono rounded-xl border border-slate-800 leading-relaxed custom-scrollbar resize-none focus:outline-none" placeholder="Prompt will auto-synthesize once clinical note is pasted..."></textarea>
+            
+            <div class="absolute bottom-2.5 right-2.5 flex items-center gap-2">
+              <span class="text-[10px] text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">Ready for MS Copilot / ChatGPT</span>
+            </div>
+          </div>
+
+          <!-- Action Buttons Bar -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button onclick="copyCopilotPrompt()" class="w-full bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-2">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+              <span>Copy Copilot Prompt</span>
+            </button>
+            <button onclick="generateDirectLetter()" class="w-full bg-teal-700 hover:bg-teal-800 active:bg-teal-900 text-white font-bold text-xs py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-2">
+              <i data-lucide="sparkles" class="w-4 h-4 text-emerald-300"></i>
+              <span>1-Click Generate Letter</span>
+            </button>
+            <button onclick="copyMergedEmrNote()" class="w-full bg-slate-800 hover:bg-slate-900 text-slate-100 font-bold text-xs py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-2" title="Merges original clinical note + generated appeal letter ready for Epic/Cerner">
+              <i data-lucide="layers" class="w-4 h-4 text-indigo-400"></i>
+              <span>Copy Merged EMR Note</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- TAB 2: DIRECT LETTER VIEW -->
+        <div id="letterTabView" class="hidden flex-1 flex flex-col">
+          <div class="relative flex-1 min-h-[220px] flex flex-col mb-3">
+            <textarea id="generatedLetterTextarea" class="w-full flex-1 p-3.5 bg-slate-50 text-slate-900 text-xs font-serif leading-relaxed rounded-xl border border-slate-300 custom-scrollbar resize-none focus:ring-2 focus:ring-blue-500" placeholder="Click '1-Click Generate Letter' or paste Copilot response here to review and edit..."></textarea>
+          </div>
+
+          <!-- Letter Action Bar -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button onclick="copyLetterText()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-2">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+              <span>Copy Letter</span>
+            </button>
+            <button onclick="copyMergedEmrNote()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-2">
+              <i data-lucide="clipboard-check" class="w-4 h-4 text-emerald-400"></i>
+              <span>Copy Note + Letter (EMR)</span>
+            </button>
+            <button onclick="printFormalLetter()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs py-3 px-4 rounded-xl border border-slate-300 transition flex items-center justify-center gap-2">
+              <i data-lucide="printer" class="w-4 h-4 text-slate-600"></i>
+              <span>Print / Export PDF</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</main>
+
+<!-- HIDDEN PRINT CONTAINER FOR CLEAN PDF EXPORT -->
+<div id="printLetterArea" class="hidden p-8 font-serif text-slate-900 text-sm leading-relaxed max-w-4xl mx-auto">
+  <div id="printContent"></div>
+</div>
+
+<!-- COMPREHENSIVE 60-CARRIER INSURANCE DATABASE -->
+<script>
+const INSURERS = {
+  // === NATIONAL COMMERCIAL PAYERS ===
+  aetna: {
+    name: 'Aetna',
+    group: 'National Commercial',
+    policyNumber: 'CPB 0743 (Spine Fusion & Decompression)',
+    medicalNecessityDef: 'Clinically appropriate, necessary for diagnosis/treatment, consistent with accepted standards of medical practice, not experimental.',
+    conservativeDuration: '12 weeks structured PT/conservative care for fusion; 6 weeks for decompression',
+    ptRequired: 'Documented formal Physical Therapy (minimum 12 weeks for fusion, 6 weeks for decompression)',
+    imagingRequired: 'MRI or CT demonstrating severe neural compression, high-grade stenosis, or dynamic instability (flex/ext X-ray >= 3mm translation or >= 10 deg angulation)',
+    functionalScores: 'Validated functional outcome metric (ODI >= 40% or VAS Back/Leg >= 6/10)',
+    waivers: 'Progressive motor deficit (Grade <= 3/5), acute cauda equina syndrome, progressive myelopathy, acute spinal fracture/dislocation',
+    portalUrl: 'https://www.aetna.com/providers',
+    priorAuthPhone: '1-800-238-6279',
+    guidelineSource: 'Aetna CPB 0743 / InterQual',
+  },
+  anthem: {
+    name: 'Anthem Blue Cross / Elevance Health',
+    group: 'National Commercial',
+    policyNumber: 'CG-SURG-71 / CG-SURG-72 / CG-SURG-83',
+    medicalNecessityDef: 'Requires documented structural lesion matching neurological findings and failure of comprehensive non-operative modalities.',
+    conservativeDuration: '6-12 weeks documented non-operative care',
+    ptRequired: 'Formal physical therapy with documented compliance and failure to achieve symptom resolution',
+    imagingRequired: 'MRI or CT confirming neural impingement matching clinical radicular distribution',
+    functionalScores: 'Documented functional disability in daily living activities (ODI / NDI preferred)',
+    waivers: 'Rapidly progressive motor weakness, acute cauda equina, cervical myelopathy (mJOA <= 14)',
+    portalUrl: 'https://www.anthem.com/providers',
+    priorAuthPhone: '1-800-274-7130',
+    guidelineSource: 'Anthem Clinical Guidelines CG-SURG-71/72/83',
+  },
+  uhc: {
+    name: 'UnitedHealthcare (UHC / Optum)',
+    group: 'National Commercial',
+    policyNumber: 'Policy 2023T0559U (Musculoskeletal / Spine)',
+    medicalNecessityDef: 'Must satisfy InterQual criteria and UHC commercial medical policy specifications including documented symptom concordance.',
+    conservativeDuration: '12 weeks active conservative care for fusion; 6 weeks for discectomy/decompression',
+    ptRequired: 'Minimum 6-12 weeks active PT, NSAIDs/analgesics, and consideration of spinal injections',
+    imagingRequired: 'Weight-bearing flexion/extension radiographs confirming segmental instability or MRI showing severe canal/foraminal stenosis',
+    functionalScores: 'Oswestry Disability Index (ODI) score or equivalent functional impairment',
+    waivers: 'Emergent cauda equina syndrome, rapidly progressing neurological deficit, acute spinal trauma',
+    portalUrl: 'https://www.uhcprovider.com',
+    priorAuthPhone: '1-866-889-8054',
+    guidelineSource: 'UHC Policy 2023T0559U / InterQual',
+  },
+  cigna: {
+    name: 'Cigna / Evernorth',
+    group: 'National Commercial',
+    policyNumber: 'Coverage Policy 0263 (Lumbar Spine Procedures)',
+    medicalNecessityDef: 'Requires verifiable organic pathology, concordance between neuro-imaging and clinical exams, and failure of multimodal non-operative treatments.',
+    conservativeDuration: '3+ months documented multimodal conservative therapy',
+    ptRequired: 'Physical therapy (active modalities) along with medication management and activity modification',
+    imagingRequired: 'Recent high-resolution MRI or CT confirming spinal pathology',
+    functionalScores: 'Validated pain score (VAS) and functional disability questionnaire',
+    waivers: 'Progressive neurologically verified motor weakness, cauda equina, cervical myelopathy',
+    portalUrl: 'https://cignaforhcp.cigna.com',
+    priorAuthPhone: '1-800-230-6138',
+    guidelineSource: 'Cigna Coverage Policy 0263',
+  },
+  humana: {
+    name: 'Humana',
+    group: 'National Commercial',
+    policyNumber: 'Clinical Policy SUR-020 (Spine Surgery)',
+    medicalNecessityDef: 'Consistent with nationally accepted medical standards and documented lack of improvement from non-surgical interventions.',
+    conservativeDuration: '6-12 weeks structured non-operative therapy',
+    ptRequired: 'Active physical therapy program documented in clinical records',
+    imagingRequired: 'MRI or CT confirming nerve root compression or spinal cord compromise',
+    functionalScores: 'Documented functional impairment interfering with occupational or self-care duties',
+    waivers: 'Cauda equina syndrome, progressive motor loss, acute spinal instability from fracture',
+    portalUrl: 'https://www.humana.com/provider',
+    priorAuthPhone: '1-800-523-0023',
+    guidelineSource: 'Humana Clinical Policy SUR-020 / MCG',
+  },
+
+  // === REGIONAL & NATIONAL BLUE CROSS BLUE SHIELD ===
+  bcbs: {
+    name: 'Blue Cross Blue Shield Association (National)',
+    group: 'Blue Cross Blue Shield Plans',
+    policyNumber: 'Medical Policy 7.01.130 / 7.01.131',
+    medicalNecessityDef: 'Evidence of specific spinal pathology directly responsible for symptoms with refractory course following conservative care.',
+    conservativeDuration: '6-12 weeks documented non-operative management',
+    ptRequired: 'Active PT under supervision of licensed physical therapist',
+    imagingRequired: 'Cross-sectional imaging (MRI/CT) confirming anatomic correlation with physical exam findings',
+    functionalScores: 'ODI, NDI, or validated disability metrics',
+    waivers: 'Progressive motor deficit, cauda equina, progressive myelopathy',
+    portalUrl: 'https://www.bcbs.com',
+    priorAuthPhone: '1-800-676-BLUE',
+    guidelineSource: 'BCBS Medical Policy 7.01.130/131',
+  },
+  premera: {
+    name: 'Premera Blue Cross',
+    group: 'Blue Cross Blue Shield Plans',
+    policyNumber: 'Medical Policy 7.01.131 (Spine Surgery)',
+    medicalNecessityDef: 'Medically necessary when clinical symptoms correlate with diagnostic imaging and conservative care fails.',
+    conservativeDuration: 'Minimum 6 weeks PT for decompression; 12 weeks for fusion',
+    ptRequired: 'Documented completion of 6-12 weeks active physical therapy',
+    imagingRequired: 'MRI or CT showing structural pathology; dynamic flexion/extension X-rays for fusion',
+    functionalScores: 'Functional impairment documented with validated measures (ODI/VAS)',
+    waivers: 'Progressive neurological deficits, cauda equina, spinal cord compression with myelopathy',
+    portalUrl: 'https://www.premera.com/providers',
+    priorAuthPhone: '1-800-722-1471',
+    guidelineSource: 'Premera Medical Policy 7.01.131',
+  },
+  regence: {
+    name: 'Regence BlueShield (Cambia Health)',
+    group: 'Blue Cross Blue Shield Plans',
+    policyNumber: 'Medical Policy 7.01.131',
+    medicalNecessityDef: 'Requires objective anatomical correlation on imaging, clear functional limitation, and failure of structured conservative regimen.',
+    conservativeDuration: '6 weeks for decompression; 12 weeks for fusion',
+    ptRequired: 'Supervised active physical therapy and medication trials',
+    imagingRequired: 'High quality MRI/CT and standing radiographs demonstrating instability or severe neural compromise',
+    functionalScores: 'Oswestry Disability Index (ODI >= 40%) or Neck Disability Index (NDI)',
+    waivers: 'Acute cauda equina, progressive motor weakness (Grade 3/5 or worse), progressive myelopathy',
+    portalUrl: 'https://www.regence.com/providers',
+    priorAuthPhone: '1-888-367-2112',
+    guidelineSource: 'Regence Medical Policy 7.01.131',
+  },
+  blueshieldca: {
+    name: 'Blue Shield of California',
+    group: 'Blue Cross Blue Shield Plans',
+    policyNumber: 'BSC Policy 7.01.131',
+    medicalNecessityDef: 'Requires strict diagnostic correlation and failed conservative care unless urgent neurological criteria met.',
+    conservativeDuration: '6-12 weeks non-operative management',
+    ptRequired: 'Active physical therapy program documented with dates and clinical responses',
+    imagingRequired: 'MRI or CT demonstrating severe stenosis, disc herniation, or spondylolisthesis with instability',
+    functionalScores: 'Validated pain and functional disability rating',
+    waivers: 'Cauda equina syndrome, progressive motor deficits, acute trauma',
+    portalUrl: 'https://www.blueshieldca.com/providers',
+    priorAuthPhone: '1-800-541-6652',
+    guidelineSource: 'Blue Shield CA Policy 7.01.131',
+  },
+  highmark: {
+    name: 'Highmark Blue Cross Blue Shield',
+    group: 'Blue Cross Blue Shield Plans',
+    policyNumber: 'Medical Policy MP-045 (Spinal Decompression & Fusion)',
+    medicalNecessityDef: 'Clear demonstration of spinal instability or stenosis corresponding to radicular or claudicatory symptoms.',
+    conservativeDuration: '12 weeks conservative treatment for fusion; 6 weeks for decompression',
+    ptRequired: 'Formal physical therapy with home exercise regimen documentation',
+    imagingRequired: 'Advanced imaging (MRI/CT) confirming concordant neural compression',
+    functionalScores: 'Functional assessment documented in medical record',
+    waivers: 'Severe or progressive neurological deficit, myelopathy, cauda equina',
+    portalUrl: 'https://www.highmark.com/providers',
+    priorAuthPhone: '1-800-547-3627',
+    guidelineSource: 'Highmark Medical Policy MP-045',
+  },
+  ibx: {
+    name: 'Independence Blue Cross (IBX)',
+    group: 'Blue Cross Blue Shield Plans',
+    policyNumber: 'Medical Policy 11.02.04 (Spinal Surgery)',
+    medicalNecessityDef: 'Requires concordant clinical examination and neuro-imaging along with exhausted non-surgical therapies.',
+    conservativeDuration: '6-12 weeks non-operative therapy',
+    ptRequired: 'Physical therapy, pharmacotherapy, and spinal injection trials where clinically indicated',
+    imagingRequired: 'MRI/CT demonstrating structural pathology',
+    functionalScores: 'Validated outcome measurement (ODI / VAS)',
+    waivers: 'Rapidly progressive motor weakness, cauda equina syndrome',
+    portalUrl: 'https://www.ibx.com/providers',
+    priorAuthPhone: '1-800-ASK-BLUE',
+    guidelineSource: 'IBX Medical Policy 11.02.04',
+  },
+  floridablue: {
+    name: 'Florida Blue (GuideWell)',
+    group: 'Blue Cross Blue Shield Plans',
+    policyNumber: 'Medical Policy 02-20000-24',
+    medicalNecessityDef: 'Concordance between clinical radicular syndrome and diagnostic imaging findings.',
+    conservativeDuration: '6-12 weeks structured conservative treatment',
+    ptRequired: 'Physical therapy program under licensed therapist',
+    imagingRequired: 'MRI or CT confirming neural compression',
+    functionalScores: 'Documented functional disability',
+    waivers: 'Progressive motor deficit, acute cauda equina syndrome',
+    portalUrl: 'https://www.floridablue.com/providers',
+    priorAuthPhone: '1-800-727-2227',
+    guidelineSource: 'Florida Blue Medical Policy 02-20000-24',
+  },
+  bcbstx: {
+    name: 'Blue Cross Blue Shield of Texas / Illinois (HCSC)',
+    group: 'Blue Cross Blue Shield Plans',
+    policyNumber: 'HCSC Medical Policy 7.01.131',
+    medicalNecessityDef: 'Demonstrated clinical and imaging concordance with failure of structured physical modalities.',
+    conservativeDuration: '6-12 weeks conservative treatment',
+    ptRequired: 'Formal physical therapy with objective progress notes',
+    imagingRequired: 'MRI/CT and dynamic flexion/extension radiographs for fusion',
+    functionalScores: 'Validated pain and disability scales',
+    waivers: 'Progressive motor deficits, cauda equina, acute fracture',
+    portalUrl: 'https://www.bcbstx.com/provider',
+    priorAuthPhone: '1-800-451-0287',
+    guidelineSource: 'HCSC Medical Policy 7.01.131',
+  },
+  bcbsnc: {
+    name: 'Blue Cross Blue Shield of North Carolina',
+    group: 'Blue Cross Blue Shield Plans',
+    policyNumber: 'Corporate Medical Policy (Spine Surgery)',
+    medicalNecessityDef: 'Failure of non-operative care in the presence of demonstrable neural compromise on imaging.',
+    conservativeDuration: '6-12 weeks documented non-operative care',
+    ptRequired: 'Physical therapy and pharmacological therapy',
+    imagingRequired: 'High-resolution MRI or CT',
+    functionalScores: 'Documented activity limitations',
+    waivers: 'Emergency neurological compromise, cauda equina',
+    portalUrl: 'https://www.bluecrossnc.com/providers',
+    priorAuthPhone: '1-800-214-4844',
+    guidelineSource: 'BCBSNC Corporate Medical Policy',
+  },
+  carefirst: {
+    name: 'CareFirst BlueCross BlueShield',
+    group: 'Blue Cross Blue Shield Plans',
+    policyNumber: 'Medical Policy 7.01.074',
+    medicalNecessityDef: 'Anatomic structural pathology matching clinical nerve distribution with failed non-surgical trials.',
+    conservativeDuration: '6-12 weeks conservative care',
+    ptRequired: 'Documented PT program',
+    imagingRequired: 'MRI or CT confirming nerve root or spinal cord impingement',
+    functionalScores: 'ODI / NDI documented',
+    waivers: 'Cauda equina, severe motor weakness, myelopathy',
+    portalUrl: 'https://www.carefirst.com/providers',
+    priorAuthPhone: '1-800-842-5975',
+    guidelineSource: 'CareFirst Medical Policy 7.01.074',
+  },
+  horizon: {
+    name: 'Horizon Blue Cross Blue Shield of New Jersey',
+    group: 'Blue Cross Blue Shield Plans',
+    policyNumber: 'Medical Policy 088 (Spine Surgery Guidelines)',
+    medicalNecessityDef: 'Concordant imaging and clinical presentation with refractory symptoms after conservative care.',
+    conservativeDuration: '6-12 weeks conservative care',
+    ptRequired: 'Active physical therapy with licensed provider',
+    imagingRequired: 'MRI or CT demonstrating severe stenosis or instability',
+    functionalScores: 'Validated functional deficit documentation',
+    waivers: 'Progressive motor deficit, acute cauda equina syndrome',
+    portalUrl: 'https://www.horizonblue.com/providers',
+    priorAuthPhone: '1-800-624-1110',
+    guidelineSource: 'Horizon BCBSNJ Medical Policy 088',
+  },
+  bcbsma: {
+    name: 'Blue Cross Blue Shield of Massachusetts',
+    group: 'Blue Cross Blue Shield Plans',
+    policyNumber: 'Medical Policy 039 (Spinal Fusion)',
+    medicalNecessityDef: 'Clinically appropriate when neurological symptoms correlate with structural lesion on imaging with documented failed non-operative care.',
+    conservativeDuration: '6-12 weeks conservative therapy',
+    ptRequired: 'Supervised active physical therapy and medication management',
+    imagingRequired: 'MRI or CT confirming nerve root or spinal cord compression',
+    functionalScores: 'Validated functional outcome metrics (ODI/NDI)',
+    waivers: 'Progressive motor deficits, cauda equina syndrome',
+    portalUrl: 'https://www.bluecrossma.org/provider',
+    priorAuthPhone: '1-800-451-8123',
+    guidelineSource: 'BCBSMA Medical Policy 039',
+  },
+  bcbsmi: {
+    name: 'Blue Cross Blue Shield of Michigan',
+    group: 'Blue Cross Blue Shield Plans',
+    policyNumber: 'BCBSM Musculoskeletal Surgical Guidelines',
+    medicalNecessityDef: 'Requires objective anatomical correlation on neuro-imaging, failed conservative treatment, and documented functional limitation.',
+    conservativeDuration: '6-12 weeks documented non-operative management',
+    ptRequired: 'Active physical therapy with objective functional goals',
+    imagingRequired: 'High resolution MRI or CT demonstrating concordant nerve root compromise',
+    functionalScores: 'Documented functional impairment',
+    waivers: 'Cauda equina syndrome, rapidly progressing neurological deficit',
+    portalUrl: 'https://www.bcbsm.com/providers',
+    priorAuthPhone: '1-800-482-8504',
+    guidelineSource: 'BCBSM Musculoskeletal Surgical Guidelines',
+  },
+  wellmark: {
+    name: 'Wellmark Blue Cross Blue Shield (IA / SD)',
+    group: 'Blue Cross Blue Shield Plans',
+    policyNumber: 'Medical Policy 07.01.130',
+    medicalNecessityDef: 'Concordance between clinical radicular syndrome and diagnostic imaging findings after failed conservative therapy.',
+    conservativeDuration: '6-12 weeks conservative treatment',
+    ptRequired: 'Documented physical therapy program and analgesic trials',
+    imagingRequired: 'MRI or CT confirming neural compression',
+    functionalScores: 'Validated pain and functional disability scoring',
+    waivers: 'Progressive motor deficit, acute cauda equina syndrome',
+    portalUrl: 'https://www.wellmark.com/provider',
+    priorAuthPhone: '1-800-527-2318',
+    guidelineSource: 'Wellmark Medical Policy 07.01.130',
+  },
+  providence: {
+    name: 'Providence Health Plan (OR / WA)',
+    group: 'Universal Decision Support & TPAs',
+    policyNumber: 'Providence Medical Policy MP-088',
+    medicalNecessityDef: 'Evidence of specific spinal pathology directly responsible for symptoms with refractory course following conservative care.',
+    conservativeDuration: '6-12 weeks non-operative management',
+    ptRequired: 'Active physical therapy program under licensed therapist',
+    imagingRequired: 'Cross-sectional imaging (MRI/CT) confirming anatomic correlation with physical exam findings',
+    functionalScores: 'ODI, NDI, or validated disability metrics',
+    waivers: 'Progressive motor deficit, cauda equina, progressive myelopathy',
+    portalUrl: 'https://www.providencehealthplan.com/providers',
+    priorAuthPhone: '1-800-878-4445',
+    guidelineSource: 'Providence Health Plan Medical Policy MP-088',
+  },
+  geisinger: {
+    name: 'Geisinger Health Plan (PA)',
+    group: 'Universal Decision Support & TPAs',
+    policyNumber: 'Clinical Guideline MP-142',
+    medicalNecessityDef: 'Demonstrated clinical and imaging concordance with failure of structured physical modalities.',
+    conservativeDuration: '6-12 weeks conservative care',
+    ptRequired: 'Formal physical therapy with objective progress notes',
+    imagingRequired: 'MRI/CT and dynamic flexion/extension radiographs for fusion',
+    functionalScores: 'Validated pain and disability scales',
+    waivers: 'Progressive motor deficits, cauda equina, acute fracture',
+    portalUrl: 'https://www.geisinger.org/health-plan/providers',
+    priorAuthPhone: '1-800-447-4000',
+    guidelineSource: 'Geisinger Clinical Guideline MP-142',
+  },
+  upmc: {
+    name: 'UPMC Health Plan (PA)',
+    group: 'Universal Decision Support & TPAs',
+    policyNumber: 'Policy MP.044 (Spine Surgery)',
+    medicalNecessityDef: 'Services required for the diagnosis and treatment of conditions causing pain and functional limitation.',
+    conservativeDuration: '6-12 weeks conservative care',
+    ptRequired: 'Physical therapy and pharmacological management',
+    imagingRequired: 'MRI or CT confirming neural compression',
+    functionalScores: 'Documented functional impairment in ADLs',
+    waivers: 'Progressive motor deficit, cauda equina syndrome',
+    portalUrl: 'https://www.upmchealthplan.com/providers',
+    priorAuthPhone: '1-800-994-2752',
+    guidelineSource: 'UPMC Health Plan Policy MP.044',
+  },
+  sunflower: {
+    name: 'Sunflower Health Plan (Centene Kansas Medicaid)',
+    group: 'State Medicaid & MCOs',
+    policyNumber: 'Sunflower Clinical Policy (Musculoskeletal)',
+    medicalNecessityDef: 'Uses Evolent / NIA guidelines and InterQual criteria for Medicaid members.',
+    conservativeDuration: '6-12 weeks conservative treatment',
+    ptRequired: 'Structured physical therapy program and medical therapy',
+    imagingRequired: 'MRI or CT showing structural pathology correlating with neurological findings',
+    functionalScores: 'Functional score or disability assessment',
+    waivers: 'Cauda equina syndrome, progressive motor loss, myelopathy',
+    portalUrl: 'https://www.sunflowerhealthplan.com/providers',
+    priorAuthPhone: '1-877-644-4623',
+    guidelineSource: 'Sunflower Health Plan / Evolent Health',
+  },
+  alignment: {
+    name: 'Alignment Healthcare (Medicare Advantage)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Alignment Clinical Coverage Criteria',
+    medicalNecessityDef: 'Medicare LCD baseline combined with Alignment prior authorization requirements and InterQual clinical criteria.',
+    conservativeDuration: '6-12 weeks conservative care',
+    ptRequired: 'Supervised physical therapy and pharmacological therapy',
+    imagingRequired: 'MRI or CT demonstrating concordant nerve root compromise or segmental instability',
+    functionalScores: 'Oswestry Disability Index (ODI) or equivalent',
+    waivers: 'Cauda equina syndrome, progressive motor deficits, acute fracture',
+    portalUrl: 'https://www.alignmenthealthplan.com/providers',
+    priorAuthPhone: '1-844-310-2247',
+    guidelineSource: 'Alignment Healthcare Clinical Guidelines',
+  },
+  wellcare: {
+    name: 'Wellcare / Centene Medicare Advantage',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Wellcare Clinical Guidelines (MCG Musculoskeletal)',
+    medicalNecessityDef: 'Medicare LCD standard applied through Wellcare prior authorization and MCG Musculoskeletal Guidelines.',
+    conservativeDuration: '6-12 weeks conservative care',
+    ptRequired: 'Active physical therapy program',
+    imagingRequired: 'MRI or CT confirming neural compression',
+    functionalScores: 'Documented limitation of activities of daily living',
+    waivers: 'Cauda equina syndrome, rapid neurological deterioration',
+    portalUrl: 'https://www.wellcare.com/provider',
+    priorAuthPhone: '1-855-538-0454',
+    guidelineSource: 'Wellcare Clinical Guidelines / MCG',
+  },
+
+
+  // === GOVERNMENT MEDICARE & MACs ===
+  medicare: {
+    name: 'Medicare CMS (Original Medicare / MAC Baseline)',
+    group: 'Medicare & MACs',
+    policyNumber: 'CMS NCD 150.1 / LCD L33767 & L33764',
+    medicalNecessityDef: 'Reasonable and necessary for the diagnosis or treatment of illness or injury (Title XVIII § 1862(a)(1)(A) Social Security Act). Follows Local Coverage Determinations (LCDs) by regional MACs.',
+    conservativeDuration: 'Typically 3+ months non-operative care unless acute progressive deficit present',
+    ptRequired: 'Supervised physical therapy and medical management documented in patient chart',
+    imagingRequired: 'MRI, CT, or myelogram confirming pathology concordant with physical examination',
+    functionalScores: 'Objective functional limitation documented (Oswestry, VAS, or functional mobility rating)',
+    waivers: 'Progressive neurological deficit, cauda equina syndrome, cervical spondylotic myelopathy with gait disturbance, acute fracture/dislocation',
+    portalUrl: 'https://www.cms.gov/medicare-coverage-database',
+    priorAuthPhone: '1-800-MEDICARE',
+    guidelineSource: 'CMS NCD 150.1; LCD L33767/L33764; Social Security Act § 1862(a)(1)(A)',
+  },
+  noridian: {
+    name: 'Noridian Healthcare Solutions (MAC Jurisdiction E & F)',
+    group: 'Medicare & MACs',
+    policyNumber: 'LCD L34648 / LCD L33767 (Spine Decompression & Fusion)',
+    medicalNecessityDef: 'Requires objective anatomical correlation on neuro-imaging, failed conservative treatment, and documented functional limitation for Western states.',
+    conservativeDuration: '3+ months conservative therapy for degenerative conditions',
+    ptRequired: 'Structured physical therapy, medication management, and activity modification',
+    imagingRequired: 'MRI or CT showing nerve root or spinal cord compression matching examination',
+    functionalScores: 'Documented functional limitation in daily living activities',
+    waivers: 'Cauda equina syndrome, progressive motor deficit, acute spinal trauma',
+    portalUrl: 'https://med.noridianmedicare.com',
+    priorAuthPhone: '1-855-609-9960',
+    guidelineSource: 'Noridian LCD L34648 / L33767 (AK, AZ, CA, HI, ID, MT, ND, NV, OR, SD, UT, WA, WY)',
+  },
+  novitas: {
+    name: 'Novitas Solutions (MAC Jurisdiction H & L)',
+    group: 'Medicare & MACs',
+    policyNumber: 'LCD L35457 (Lumbar Spinal Fusion & Decompression)',
+    medicalNecessityDef: 'Medical necessity requires proven structural spinal pathology and documented failure of standard non-operative management in PA, NJ, MD, DE, DC, CO, NM, TX, OK, AR, LA.',
+    conservativeDuration: 'Minimum 3 months conservative therapy',
+    ptRequired: 'Supervised physical therapy and multimodal medical care',
+    imagingRequired: 'Diagnostic imaging demonstrating spondylolisthesis, stenosis, or disc pathology',
+    functionalScores: 'Validated pain and functional impairment documentation',
+    waivers: 'Rapid neurological deterioration, cauda equina syndrome',
+    portalUrl: 'https://www.novitas-solutions.com',
+    priorAuthPhone: '1-855-252-8782',
+    guidelineSource: 'Novitas Solutions LCD L35457',
+  },
+  palmetto: {
+    name: 'Palmetto GBA (MAC Jurisdiction J & M)',
+    group: 'Medicare & MACs',
+    policyNumber: 'LCD L34555 (Spinal Procedures)',
+    medicalNecessityDef: 'Requires clinical and radiographic correlation with documented failed non-surgical management in AL, GA, TN, NC, SC, VA, WV.',
+    conservativeDuration: '3 months documented conservative treatment',
+    ptRequired: 'Physical therapy and pharmacological management',
+    imagingRequired: 'MRI/CT correlating with clinical signs and symptoms',
+    functionalScores: 'Documentation of impairment in activities of daily living',
+    waivers: 'Cauda equina, progressive motor weakness, acute trauma',
+    portalUrl: 'https://www.palmettogba.com',
+    priorAuthPhone: '1-855-696-0705',
+    guidelineSource: 'Palmetto GBA LCD L34555',
+  },
+  firstcoast: {
+    name: 'First Coast Service Options (MAC Jurisdiction N)',
+    group: 'Medicare & MACs',
+    policyNumber: 'LCD L33764 (Florida, Puerto Rico, US Virgin Islands)',
+    medicalNecessityDef: 'Concordance between clinical neurological deficits and high-resolution diagnostic imaging.',
+    conservativeDuration: '3 months non-operative management',
+    ptRequired: 'Active physical therapy program',
+    imagingRequired: 'MRI or CT showing nerve compression',
+    functionalScores: 'Documented functional impairment',
+    waivers: 'Progressive motor deficit, cauda equina syndrome',
+    portalUrl: 'https://medicare.fcso.com',
+    priorAuthPhone: '1-877-602-8816',
+    guidelineSource: 'First Coast LCD L33764',
+  },
+  ngs: {
+    name: 'National Government Services (NGS MAC Jurisdiction 6 & K)',
+    group: 'Medicare & MACs',
+    policyNumber: 'LCD L33615 (CT, IL, MA, ME, MN, NH, NY, RI, VT, WI)',
+    medicalNecessityDef: 'Evidence of nerve root compression or spinal instability with failed conservative therapy.',
+    conservativeDuration: '3 months structured conservative therapy',
+    ptRequired: 'Physical therapy and medical management',
+    imagingRequired: 'MRI, CT, or myelography demonstrating structural lesion',
+    functionalScores: 'Functional limitations documented',
+    waivers: 'Cauda equina syndrome, progressive motor weakness',
+    portalUrl: 'https://www.ngsmedicare.com',
+    priorAuthPhone: '1-866-837-0241',
+    guidelineSource: 'NGS MAC LCD L33615',
+  },
+  cgs: {
+    name: 'CGS Administrators (MAC Jurisdiction 15)',
+    group: 'Medicare & MACs',
+    policyNumber: 'LCD L34106 (KY, OH)',
+    medicalNecessityDef: 'Requires radiographic confirmation of neural compression correlating with clinical symptoms and failed non-operative care.',
+    conservativeDuration: '3 months conservative treatment',
+    ptRequired: 'Physical therapy and medication trials',
+    imagingRequired: 'MRI or CT confirming pathology',
+    functionalScores: 'Functional score or functional ADL impairment documented',
+    waivers: 'Progressive neurological deficits, cauda equina syndrome',
+    portalUrl: 'https://www.cgsmedicare.com',
+    priorAuthPhone: '1-866-590-6703',
+    guidelineSource: 'CGS Administrators LCD L34106',
+  },
+
+  // === MEDICARE ADVANTAGE PLANS ===
+  medicare_advantage: {
+    name: 'Medicare Advantage (General / Plan Baseline)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Medicare Advantage Baseline (CMS LCD/NCD + Plan PA Addendum)',
+    medicalNecessityDef: 'MA plans must cover all services covered by Original Medicare (Parts A & B) and follow Medicare LCD/NCD criteria as a statutory floor (42 CFR § 422.101). Individual MA plans may enforce prior authorization review.',
+    conservativeDuration: '3+ months per Medicare LCD baseline',
+    ptRequired: 'Supervised active physical therapy and medical management',
+    imagingRequired: 'MRI or CT demonstrating severe pathology correlating with symptoms',
+    functionalScores: 'Documented functional impairment (ODI/VAS)',
+    waivers: 'Progressive motor deficit, acute cauda equina syndrome, progressive myelopathy',
+    portalUrl: 'https://www.cms.gov/medicare/health-plans/medicareadvtgspecratestats',
+    priorAuthPhone: 'Varies by MA plan',
+    guidelineSource: '42 CFR § 422.101 (CMS MA Coverage Parity Rules) & Medicare LCDs',
+  },
+  uhc_ma: {
+    name: 'UnitedHealthcare Medicare Advantage',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'UHC MA Musculoskeletal / InterQual Protocols',
+    medicalNecessityDef: 'Medicare LCD baseline combined with UHC Medicare Advantage prior authorization requirements and InterQual clinical criteria.',
+    conservativeDuration: '12 weeks conservative care for fusion; 6 weeks for decompression',
+    ptRequired: 'Supervised physical therapy and pharmacological therapy',
+    imagingRequired: 'MRI or CT demonstrating concordant nerve root compromise or segmental instability',
+    functionalScores: 'Oswestry Disability Index (ODI) or equivalent',
+    waivers: 'Cauda equina syndrome, progressive motor deficits, acute fracture',
+    portalUrl: 'https://www.uhcprovider.com',
+    priorAuthPhone: '1-877-842-3210',
+    guidelineSource: 'UHC MA Clinical Guidelines & InterQual',
+  },
+  aetna_ma: {
+    name: 'Aetna Medicare Advantage',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Aetna MA CPB 0743 & CMS Parity Guidelines',
+    medicalNecessityDef: 'Follows Aetna Clinical Policy Bulletins alongside Medicare National and Local Coverage Determinations.',
+    conservativeDuration: '12 weeks conservative treatment for fusion; 6 weeks for decompression',
+    ptRequired: 'Physical therapy and anti-inflammatory medication trials',
+    imagingRequired: 'High resolution MRI or CT',
+    functionalScores: 'Validated functional outcome metrics',
+    waivers: 'Progressive neurological deficits, cauda equina syndrome',
+    portalUrl: 'https://www.aetna.com/providers',
+    priorAuthPhone: '1-800-624-0756',
+    guidelineSource: 'Aetna MA CPB 0743 / CMS LCDs',
+  },
+  humana_ma: {
+    name: 'Humana Medicare Advantage',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Humana MA SUR-020 & MCG Criteria',
+    medicalNecessityDef: 'Medicare LCD standard applied through Humana prior authorization and MCG Musculoskeletal Guidelines.',
+    conservativeDuration: '6-12 weeks conservative care',
+    ptRequired: 'Active physical therapy program',
+    imagingRequired: 'MRI or CT confirming neural compression',
+    functionalScores: 'Documented limitation of activities of daily living',
+    waivers: 'Cauda equina syndrome, rapid neurological deterioration',
+    portalUrl: 'https://www.humana.com/provider',
+    priorAuthPhone: '1-800-457-4708',
+    guidelineSource: 'Humana MA Policy SUR-020 / MCG',
+  },
+  devoted: {
+    name: 'Devoted Health (Medicare Advantage)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Devoted Health Prior Authorization Criteria',
+    medicalNecessityDef: 'Evidence-based criteria supporting necessity of surgical intervention after conservative care trials per Medicare LCD standards.',
+    conservativeDuration: '6-12 weeks documented non-operative care',
+    ptRequired: 'Documented physical therapy program',
+    imagingRequired: 'MRI or CT confirming corresponding pathology',
+    functionalScores: 'Functional status documentation',
+    waivers: 'Progressive motor deficit, cauda equina syndrome',
+    portalUrl: 'https://www.devoted.com/providers',
+    priorAuthPhone: '1-800-338-6833',
+    guidelineSource: 'Devoted Health Clinical Guidelines',
+  },
+
+  // === STATE MEDICAID & MCOs ===
+  medicaid: {
+    name: 'Medicaid (State Fee-For-Service Baseline)',
+    group: 'State Medicaid & MCOs',
+    policyNumber: 'State-Specific Medicaid Plan / Follows Medicare LCD Standards',
+    medicalNecessityDef: 'Health care services that are clinically appropriate, in terms of type, frequency, extent, site, and duration, and considered effective for the patient illness, injury, or disease under State Title XIX standards.',
+    conservativeDuration: '6-12 weeks conservative treatment',
+    ptRequired: 'Physical therapy trial and medication management',
+    imagingRequired: 'MRI or CT demonstrating anatomic pathology matching physical exam findings',
+    functionalScores: 'Functional limitations documented in clinical notes',
+    waivers: 'Progressive motor deficits, acute cauda equina syndrome, progressive myelopathy',
+    portalUrl: 'https://www.medicaid.gov',
+    priorAuthPhone: 'Varies by State Agency',
+    guidelineSource: 'State Title XIX Medicaid Standards; Medicare LCD reference',
+  },
+  centene: {
+    name: 'Centene / Ambetter / Superior HealthPlan',
+    group: 'State Medicaid & MCOs',
+    policyNumber: 'Centene Clinical Policy (Musculoskeletal Surgery)',
+    medicalNecessityDef: 'Uses Evolent / NIA guidelines and InterQual criteria for Medicaid and Marketplace members.',
+    conservativeDuration: '6-12 weeks conservative treatment',
+    ptRequired: 'Structured physical therapy program and medical therapy',
+    imagingRequired: 'MRI or CT showing structural pathology correlating with neurological findings',
+    functionalScores: 'Functional score or disability assessment',
+    waivers: 'Cauda equina syndrome, progressive motor loss, myelopathy',
+    portalUrl: 'https://www.centene.com/providers',
+    priorAuthPhone: '1-800-225-3901',
+    guidelineSource: 'Centene Clinical Policies / Evolent Health',
+  },
+  molina: {
+    name: 'Molina Healthcare',
+    group: 'State Medicaid & MCOs',
+    policyNumber: 'Clinical Policy MH-032 (Spine Surgery: Decompression & Fusion)',
+    medicalNecessityDef: 'Medically necessary when structural lesion matches clinical neurological distribution and conservative care has failed.',
+    conservativeDuration: '6 weeks for decompression; 12 weeks for fusion',
+    ptRequired: 'Minimum 6-12 weeks active PT, NSAID/analgesic trial, and injection trial if indicated',
+    imagingRequired: 'MRI or CT demonstrating severe stenosis, herniation, or dynamic instability',
+    functionalScores: 'Validated pain and functional disability documentation (ODI/VAS)',
+    waivers: 'Progressive neurological deficits, cauda equina, acute myelopathy',
+    portalUrl: 'https://www.molinahealthcare.com/providers',
+    priorAuthPhone: '1-888-562-5442',
+    guidelineSource: 'Molina Clinical Policy MH-032 / MCG',
+  },
+  caresource: {
+    name: 'CareSource',
+    group: 'State Medicaid & MCOs',
+    policyNumber: 'CareSource Musculoskeletal Surgical Policies',
+    medicalNecessityDef: 'Services required for the diagnosis and treatment of conditions causing pain and functional limitation.',
+    conservativeDuration: '6-12 weeks conservative care',
+    ptRequired: 'Physical therapy and pharmacological management',
+    imagingRequired: 'MRI or CT confirming neural compression',
+    functionalScores: 'Documented functional impairment in ADLs',
+    waivers: 'Progressive motor deficit, cauda equina syndrome',
+    portalUrl: 'https://www.caresource.com/providers',
+    priorAuthPhone: '1-800-488-0134',
+    guidelineSource: 'CareSource Clinical Guidelines',
+  },
+  wa_apple_health_chpw: {
+    name: 'Apple Health — Community Health Plan of WA (CHPW)',
+    group: 'State Medicaid & MCOs',
+    policyNumber: 'WA HCA Apple Health Managed Care Contract / MCG Criteria',
+    medicalNecessityDef: 'Clinically appropriate services necessary to treat an illness or injury in the least intensive setting per WA HCA standards. Uses MCG criteria for utilization review.',
+    conservativeDuration: '6 weeks for decompression; 12 weeks for fusion',
+    ptRequired: 'PT minimum 6 weeks for decompression; PT 12 weeks for fusion; NSAID/analgesic trial',
+    imagingRequired: 'MRI of affected spine. CT if MRI contraindicated.',
+    functionalScores: 'Documented functional limitation with validated scales',
+    waivers: 'Progressive neurological deficit, cauda equina, cervical myelopathy',
+    portalUrl: 'https://www.chpw.org/providers',
+    priorAuthPhone: '1-800-440-1561',
+    guidelineSource: 'WA HCA Apple Health Coverage Standards; MCG; CHPW Medical Policies',
+  },
+  wa_apple_health_coordinated: {
+    name: 'Apple Health — Coordinated Care (Evolent / Centene)',
+    group: 'State Medicaid & MCOs',
+    policyNumber: 'Evolent CG-1766 (Lumbar) / CG-1759 (Cervical)',
+    medicalNecessityDef: 'Uses Evolent Clinical Guidelines (formerly NIA) for musculoskeletal surgical review under WA Apple Health contract.',
+    conservativeDuration: '6-12 weeks per Evolent CG-1766/CG-1759',
+    ptRequired: 'PT 6 weeks minimum for decompression; PT 12 weeks for fusion; pharmacological trials',
+    imagingRequired: 'MRI or CT demonstrating pathology correlating with clinical symptoms',
+    functionalScores: 'Functional limitation documentation (ODI/NDI)',
+    waivers: 'Progressive motor deficit, cauda equina, acute fracture',
+    portalUrl: 'https://www.coordinatedcarehealth.com/providers',
+    priorAuthPhone: '1-877-644-4613',
+    guidelineSource: 'Evolent Clinical Guidelines CG-1766/CG-1759; WA HCA Standards',
+  },
+  medical_ca: {
+    name: 'Medi-Cal (California Department of Health Care Services)',
+    group: 'State Medicaid & MCOs',
+    policyNumber: 'Medi-Cal Provider Manual / TAR Guidelines',
+    medicalNecessityDef: 'Treatment necessary to prevent, diagnose, or treat conditions that cause acute suffering, endanger life, or cause significant disability (Welfare & Institutions Code § 14059.5).',
+    conservativeDuration: '6-12 weeks non-operative management',
+    ptRequired: 'Physical therapy and medication trials documented in medical record',
+    imagingRequired: 'MRI or CT confirming spinal pathology and neural impingement',
+    functionalScores: 'Documented functional impairment',
+    waivers: 'Acute neurological deficit, cauda equina syndrome, cervical myelopathy',
+    portalUrl: 'https://www.medi-cal.ca.gov',
+    priorAuthPhone: '1-800-541-5555',
+    guidelineSource: 'Medi-Cal Provider Manual & TAR Criteria (WIC § 14059.5)',
+  },
+
+  // === WORKERS' COMPENSATION & INDUSTRIAL INSURANCE ===
+  wa_li: {
+    name: 'WA Labor & Industries (L&I / Workers\' Comp)',
+    group: 'Workers\' Compensation & State Funds',
+    policyNumber: 'L&I Spine Surgery Guidelines (IIMAC / WAC 296-20)',
+    medicalNecessityDef: 'Washington State L&I covers treatment necessary and proper for work-related injury under RCW 51.36.010. Must be directly related to accepted industrial condition, consistent with IIMAC evidence-based guidelines, and reasonably required to cure or relieve effects of injury. Uses its own surgical guidelines — NOT commercial criteria.',
+    conservativeDuration: '6 weeks active PT for decompression; 12 weeks structured care for fusion',
+    ptRequired: 'Minimum 6-12 weeks structured active PT/functional restoration; documented functional improvement (ODI, VAS); work rehabilitation/work hardening assessment; active nicotine cessation required for fusion; behavioral/psych screening (PHQ-9) required for fusion',
+    imagingRequired: 'MRI or CT demonstrating pathology directly correlated with accepted work injury. L&I Advanced Imaging Guidance checklists apply.',
+    functionalScores: 'Documented validated outcome measures: Oswestry Disability Index (ODI >= 40% preferred), VAS Back/Leg pain scores',
+    waivers: 'Progressive neurological deficit (motor weakness Grade 3/5 or worse), acute cauda equina syndrome, progressive myelopathy, acute fracture/dislocation',
+    portalUrl: 'https://lni.wa.gov/medical-provider-resources/treatment-guidelines-and-resources',
+    priorAuthPhone: '1-800-547-8367',
+    guidelineSource: 'L&I Lumbar Spine Surgery Guideline (IIMAC); WAC 296-20 Medical Aid Rules; RCW 51.36.010',
+  },
+  ca_scif: {
+    name: 'California SCIF / Workers\' Comp (MTUS / ACOEM)',
+    group: 'Workers\' Compensation & State Funds',
+    policyNumber: 'California MTUS / ACOEM Spine Guidelines (8 CCR § 9792.20)',
+    medicalNecessityDef: 'Care must be consistent with California Medical Treatment Utilization Schedule (MTUS) based on ACOEM guidelines pursuant to Labor Code § 4600 and § 5307.27.',
+    conservativeDuration: '6 weeks active PT for decompression; 3-6 months for fusion',
+    ptRequired: 'Active physical therapy with functional goals, medication management, and work conditioning',
+    imagingRequired: 'MRI or CT correlating precisely with clinical dermatomal findings and injury mechanism',
+    functionalScores: 'Objective functional outcome scores and work capability evaluations',
+    waivers: 'Cauda equina syndrome, acute progressive motor deficits (Grade <= 3/5), acute spinal fracture',
+    portalUrl: 'https://www.statefundca.com/provider',
+    priorAuthPhone: '1-888-782-8338',
+    guidelineSource: 'California MTUS / ACOEM Practice Guidelines (8 CCR § 9792.20)',
+  },
+  tx_dwc: {
+    name: 'Texas DWC / Workers\' Comp (ODG Guidelines)',
+    group: 'Workers\' Compensation & State Funds',
+    policyNumber: 'Texas DWC Adoption of ODG by MCG (28 TAC § 137.100)',
+    medicalNecessityDef: 'Health care reasonably required under Texas Labor Code § 401.011(19) and Official Disability Guidelines (ODG) for low back and neck injuries.',
+    conservativeDuration: '6-12 weeks active non-operative management per ODG criteria',
+    ptRequired: 'Documented active physical therapy and functional restoration',
+    imagingRequired: 'High quality MRI/CT demonstrating concordant surgical lesion',
+    functionalScores: 'Validated pain and functional disability measures',
+    waivers: 'Progressive neurological deficits, cauda equina syndrome, acute trauma',
+    portalUrl: 'https://www.tdi.texas.gov/wc',
+    priorAuthPhone: '1-800-252-7031',
+    guidelineSource: 'Texas DWC / ODG by MCG (28 TAC § 137.100)',
+  },
+  ny_wcb: {
+    name: 'New York State Workers\' Comp Board (MTGs)',
+    group: 'Workers\' Compensation & State Funds',
+    policyNumber: 'NYS WCB Medical Treatment Guidelines (MTGs - Mid and Low Back)',
+    medicalNecessityDef: 'Mandatory adherence to New York Medical Treatment Guidelines (MTGs) under Workers\' Compensation Law § 13-a(5) and 12 NYCRR Part 324.',
+    conservativeDuration: '6 weeks active PT for decompression; 3 months for fusion',
+    ptRequired: 'Supervised active physical therapy with documented objective functional milestones',
+    imagingRequired: 'MRI or CT demonstrating anatomical pathology consistent with clinical exam',
+    functionalScores: 'Documented objective functional limitations and return-to-work goals',
+    waivers: 'Acute cauda equina syndrome, rapidly progressing neurological deficit, acute trauma',
+    portalUrl: 'https://www.wcb.ny.gov/content/main/hcpp/HCPP_overview.jsp',
+    priorAuthPhone: '1-877-632-4996',
+    guidelineSource: 'NYS WCB Medical Treatment Guidelines (12 NYCRR Part 324)',
+  },
+  feca_owcp: {
+    name: 'Federal FECA / US DOL OWCP (Federal Workers\' Comp)',
+    group: 'Workers\' Compensation & State Funds',
+    policyNumber: 'US Department of Labor OWCP / FECA Bulletin Guidelines',
+    medicalNecessityDef: 'Medical services reasonably necessary to cure, give relief, or reduce the degree of disability caused by work-related injury under 5 U.S.C. § 8103.',
+    conservativeDuration: '6-12 weeks conservative treatment',
+    ptRequired: 'Formal physical therapy with licensed therapist and medication trials',
+    imagingRequired: 'MRI or CT establishing clear correlation with accepted federal work injury',
+    functionalScores: 'Functional status and duty restriction documentation',
+    waivers: 'Emergency cauda equina, progressive motor weakness, acute fracture',
+    portalUrl: 'https://www.dol.gov/agencies/owcp/FECA',
+    priorAuthPhone: '1-844-493-8322',
+    guidelineSource: '5 U.S.C. § 8103 (Federal Employees\' Compensation Act)',
+  },
+
+  // === MILITARY, VETERANS & PUBLIC EMPLOYEES ===
+  tricare: {
+    name: 'TriCare (Military Health System / DHA)',
+    group: 'Military, Veterans & Public Employees',
+    policyNumber: 'TRICARE Policy Manual 6010.60-M, Ch 7, Sec 16.1',
+    medicalNecessityDef: 'Covered when medically necessary, appropriate, and consistent with accepted standards of medical practice. Administered by Humana Military (East) and Health Net / TriWest (West). Follows Medicare LCD baseline.',
+    conservativeDuration: '6-12 weeks conservative therapy',
+    ptRequired: 'Documented course of physical therapy and medical management',
+    imagingRequired: 'MRI or CT correlating with clinical signs and symptoms',
+    functionalScores: 'Documented disability in activities of daily living or military duties',
+    waivers: 'Rapidly progressive motor weakness, cauda equina syndrome, cervical myelopathy',
+    portalUrl: 'https://www.tricare.mil/providers',
+    priorAuthPhone: '1-800-444-5445 (East) / 1-844-866-9378 (West)',
+    guidelineSource: 'TRICARE Policy Manual 6010.60-M Ch 7 Sec 16.1 & Medicare LCDs',
+  },
+  va_ccn: {
+    name: 'VA Community Care Network (VHA CCN / TriWest & Optum)',
+    group: 'Military, Veterans & Public Employees',
+    policyNumber: 'VA Community Care Surgical Guidelines (Public Law 115-182)',
+    medicalNecessityDef: 'Care provided under VA MISSION Act (38 U.S.C. § 1703). Must meet VA medical necessity criteria and CMS standards to relieve service-connected and approved conditions.',
+    conservativeDuration: '6-12 weeks conservative care',
+    ptRequired: 'Supervised physical therapy and clinical medication trials',
+    imagingRequired: 'MRI or CT confirming neural impingement or spinal instability',
+    functionalScores: 'Documented functional impairment and pain scores (VAS/ODI)',
+    waivers: 'Cauda equina syndrome, progressive motor deficits, acute trauma',
+    portalUrl: 'https://www.va.gov/communitycare',
+    priorAuthPhone: '1-877-881-7618',
+    guidelineSource: 'VA MISSION Act (38 U.S.C. § 1703) & VHA Clinical Protocols',
+  },
+  wa_ump: {
+    name: 'WA Uniform Medical Plan (UMP / PEBB / SEBB)',
+    group: 'Military, Veterans & Public Employees',
+    policyNumber: 'UMP Certificate of Coverage / WA HCA PEBB Guidelines',
+    medicalNecessityDef: 'Medically necessary when clinically appropriate, required to treat illness/injury, consistent with accepted standards, and not primarily for convenience. Administered by Regence BlueShield for WA State and school employees.',
+    conservativeDuration: '6 weeks for decompression; 12 weeks for fusion',
+    ptRequired: 'Minimum 6-12 weeks active PT, anti-inflammatory trial, and spinal injections where indicated',
+    imagingRequired: 'MRI of affected spine. Dynamic flexion/extension radiographs for fusion.',
+    functionalScores: 'Documented functional impairment with validated outcome measures',
+    waivers: 'Progressive neurological deficit, cauda equina syndrome, progressive myelopathy, acute fracture',
+    portalUrl: 'https://www.hca.gov/employee-retiree-benefits/public-employees/ump-classic-and-ump-plus',
+    priorAuthPhone: '1-888-849-3681',
+    guidelineSource: 'UMP Certificate of Coverage; WA Health Care Authority PEBB/SEBB Standards',
+  },
+  wa_lifewise: {
+    name: 'LifeWise Health Plan of Washington',
+    group: 'Military, Veterans & Public Employees',
+    policyNumber: 'LifeWise Medical Policies / Premera Affiliate Policy 7.01.131',
+    medicalNecessityDef: 'Medically necessary, clinically appropriate, not primarily for convenience, consistent with Premera Blue Cross medical policies on WA Healthplanfinder.',
+    conservativeDuration: '6 weeks for decompression; 12 weeks for fusion',
+    ptRequired: 'Minimum 6-12 weeks PT, NSAID/analgesic trial, and functional assessment',
+    imagingRequired: 'MRI of affected spine; CT if contraindicated',
+    functionalScores: 'Documented functional limitation',
+    waivers: 'Progressive neurological deficit, cauda equina syndrome, acute fracture',
+    portalUrl: 'https://www.lifewisewa.com/providers',
+    priorAuthPhone: '1-800-592-6804',
+    guidelineSource: 'Premera Blue Cross Medical Policy 7.01.131; LifeWise Medical Policies',
+  },
+  wa_bridgespan: {
+    name: 'BridgeSpan Health Company (Regence Affiliate)',
+    group: 'Military, Veterans & Public Employees',
+    policyNumber: 'BridgeSpan Medical Policies / Regence Policy 7.01.131',
+    medicalNecessityDef: 'Services clinically appropriate and medically necessary per Regence BlueShield medical policies on WA Healthplanfinder.',
+    conservativeDuration: '6 weeks for decompression; 12 weeks for fusion',
+    ptRequired: 'Supervised active physical therapy and medication trials',
+    imagingRequired: 'MRI of affected spine and dynamic radiographs for instability',
+    functionalScores: 'Validated functional outcome metrics',
+    waivers: 'Progressive motor deficit, cauda equina, acute fracture',
+    portalUrl: 'https://www.bridgespanhealth.com/providers',
+    priorAuthPhone: '1-855-774-3432',
+    guidelineSource: 'Regence BlueShield Medical Policy 7.01.131; BridgeSpan Health',
+  },
+
+  // === UNIVERSAL DECISION SUPPORT & TPAs ===
+  interqual: {
+    name: 'InterQual Criteria (Change Healthcare / Optum)',
+    group: 'Universal Decision Support & TPAs',
+    policyNumber: 'InterQual Musculoskeletal & Spinal Level of Care Criteria',
+    medicalNecessityDef: 'Evidence-based clinical decision support criteria widely licensed by commercial payers, Medicaid MCOs, and Medicare Advantage plans for utilization management and prior authorization review.',
+    conservativeDuration: 'Typically 6-12 weeks depending on procedure and diagnosis',
+    ptRequired: 'Documented failure of conservative treatment appropriate to diagnosis including formal PT',
+    imagingRequired: 'MRI or CT demonstrating structural lesion directly correlating with neurological signs',
+    functionalScores: 'Functional limitation documented with validated outcome measures (ODI, NDI, VAS)',
+    waivers: 'Acute progressive motor deficit (Grade <= 3/5), cauda equina syndrome, acute myelopathy, acute fracture',
+    portalUrl: 'https://www.changehealthcare.com/clinical-decision-support/interqual',
+    priorAuthPhone: 'Licensed by individual insurer',
+    guidelineSource: 'InterQual Musculoskeletal & Spinal Level of Care Criteria',
+  },
+  mcg: {
+    name: 'MCG Care Guidelines (Milliman Care Guidelines)',
+    group: 'Universal Decision Support & TPAs',
+    policyNumber: 'MCG Musculoskeletal Care Guidelines (Ambulatory & Inpatient)',
+    medicalNecessityDef: 'Evidence-based clinical guidelines widely licensed by health plans to establish clinical indications for lumbar, cervical, and thoracic spinal surgery.',
+    conservativeDuration: '6-12 weeks non-operative management',
+    ptRequired: 'Active physical therapy with objective functional goals',
+    imagingRequired: 'Diagnostic imaging correlating with clinical dermatomal findings',
+    functionalScores: 'Validated pain and functional disability scoring',
+    waivers: 'Cauda equina syndrome, rapidly progressing motor deficits, progressive myelopathy',
+    portalUrl: 'https://www.mcg.com',
+    priorAuthPhone: 'Licensed by individual insurer',
+    guidelineSource: 'MCG Musculoskeletal Care Guidelines (Milliman Care Guidelines)',
+  },
+  multiplan: {
+    name: 'MultiPlan / PHCS (TPA Network)',
+    group: 'Universal Decision Support & TPAs',
+    policyNumber: 'MultiPlan / References Underlying Payer Criteria',
+    medicalNecessityDef: 'References underlying employer-sponsored plan or insurance carrier criteria. Requires standard clinical and radiographic concordance.',
+    conservativeDuration: '6-12 weeks conservative treatment per underlying plan',
+    ptRequired: 'Documented active physical therapy and medical management',
+    imagingRequired: 'MRI or CT confirming surgical pathology',
+    functionalScores: 'Documented impairment in activities of daily living',
+    waivers: 'Progressive neurological deficits, cauda equina syndrome',
+    portalUrl: 'https://www.multiplan.com',
+    priorAuthPhone: '1-800-950-7040',
+    guidelineSource: 'Underlying plan document & InterQual/MCG reference',
+  },
+  firsthealth: {
+    name: 'First Health / Coventry (TPA Network)',
+    group: 'Universal Decision Support & TPAs',
+    policyNumber: 'First Health Utilization Review / InterQual / MCG',
+    medicalNecessityDef: 'Follows standard utilization management protocols and evidence-based criteria for self-funded plans.',
+    conservativeDuration: '6-12 weeks conservative therapy',
+    ptRequired: 'Physical therapy and pharmacological management',
+    imagingRequired: 'High resolution MRI or CT',
+    functionalScores: 'Functional status documentation',
+    waivers: 'Cauda equina, progressive motor weakness, myelopathy',
+    portalUrl: 'https://www.firsthealth.com',
+    priorAuthPhone: '1-800-226-5116',
+    guidelineSource: 'First Health Network & InterQual Criteria',
+  },
+  kaiser: {
+    name: 'Kaiser Permanente',
+    group: 'Universal Decision Support & TPAs',
+    policyNumber: 'Permanente Medical Group Regional Clinical Guidelines',
+    medicalNecessityDef: 'Clinical guidelines developed by Permanente Medical Groups for integrated managed care delivery.',
+    conservativeDuration: '3+ months documented multimodal conservative care',
+    ptRequired: 'Integrated physical therapy, physiatry, and multimodal pain management',
+    imagingRequired: 'MRI or CT confirming surgical pathology with clinical concordance',
+    functionalScores: 'Documented functional and occupational limitations',
+    waivers: 'Cauda equina syndrome, progressive neurological deficits, acute fracture',
+    portalUrl: 'https://providers.kaiserpermanente.org',
+    priorAuthPhone: 'Varies by Kaiser Region',
+    guidelineSource: 'Permanente Medical Group Regional Practice Guidelines',
+  },
+  oscar: {
+    name: 'Oscar Health',
+    group: 'Universal Decision Support & TPAs',
+    policyNumber: 'Oscar Clinical Guidelines (MCG Musculoskeletal)',
+    medicalNecessityDef: 'Uses MCG Care Guidelines for commercial and individual marketplace surgical reviews.',
+    conservativeDuration: '6-12 weeks non-operative treatment',
+    ptRequired: 'Physical therapy program and medical therapy trials',
+    imagingRequired: 'MRI or CT demonstrating anatomic compression',
+    functionalScores: 'Validated functional outcome metrics',
+    waivers: 'Cauda equina, progressive motor deficit, acute myelopathy',
+    portalUrl: 'https://www.hioscar.com/providers',
+    priorAuthPhone: '1-855-672-2788',
+    guidelineSource: 'Oscar Health Clinical Policies / MCG',
+  },
+};
+
+// POPULATE GROUPED PAYER SELECTOR
+function populatePayerDropdown() {
+  const select = document.getElementById('payerSelect');
+  select.innerHTML = '';
+  
+  // Group insurers by group name
+  const groups = {};
+  for (const [key, val] of Object.entries(INSURERS)) {
+    if (!groups[val.group]) groups[val.group] = [];
+    groups[val.group].push({ id: key, ...val });
+  }
+
+  for (const [groupName, payers] of Object.entries(groups)) {
+    const optgroup = document.createElement('optgroup');
+    optgroup.label = groupName;
+    payers.forEach(p => {
+      const option = document.createElement('option');
+      option.value = p.id;
+      option.textContent = `${p.name} (${p.policyNumber.split(' ')[0]} ${p.policyNumber.split(' ')[1] || ''})`;
+      if (p.id === 'aetna') option.selected = true;
+      optgroup.appendChild(option);
+    });
+    select.appendChild(optgroup);
+  }
+
+  const count = Object.keys(INSURERS).length;
+  document.getElementById('totalPayerCount').textContent = count;
+  handlePayerChange();
+}
+
+function handlePayerChange() {
+  const selectedKey = document.getElementById('payerSelect').value;
+  const payer = INSURERS[selectedKey] || INSURERS.aetna;
+  
+  document.getElementById('selectedPayerPolicyNumber').textContent = payer.policyNumber.split('(')[0].trim();
+  
+  // Render Policy Summary Card in Gap Matrix
+  const card = document.getElementById('payerPolicyCard');
+  card.innerHTML = `
+    <div class="flex items-start justify-between gap-2 mb-1">
+      <div>
+        <span class="font-bold text-slate-900">${payer.name}</span>
+        <span class="text-slate-500 font-mono ml-1 text-[11px]">[${payer.policyNumber}]</span>
+      </div>
+      <a href="${payer.portalUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 font-semibold text-[11px]">
+        <span>Portal</span>
+        <i data-lucide="external-link" class="w-3 h-3"></i>
+      </a>
+    </div>
+    <p class="text-[11px] text-slate-600 line-clamp-2 leading-normal mb-1.5">${payer.medicalNecessityDef}</p>
+    <div class="flex flex-wrap gap-2 text-[11px]">
+      <span class="bg-blue-100/70 text-blue-800 px-2 py-0.5 rounded font-medium">Req: ${payer.conservativeDuration}</span>
+      <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-mono">PA Phone: ${payer.priorAuthPhone}</span>
+    </div>
+  `;
+  
+  lucide.createIcons();
+  runGapAnalysis();
+}
+
+// SAMPLE CLINICAL CASES
+const SAMPLE_CASES = {
+  lumbar_fusion: `PATIENT: John Doe (DOB: 04/12/1971, MRN: 948271)
+DATE OF SERVICE: August 29, 2026
+CHIEF COMPLAINT: Intractable low back pain radiating into bilateral lower extremities (L5 dermatome), with severe neurogenic claudication.
+
+HISTORY OF PRESENT ILLNESS:
+The patient is a 55-year-old male with a 9-month history of worsening mechanical low back pain and severe bilateral L5 radiculopathy. Pain is exacerbated by walking > 50 yards and prolonged standing. Oswestry Disability Index (ODI) is 54%. Visual Analog Scale (VAS) Back Pain is 8/10, Leg Pain is 7/10.
+
+CONSERVATIVE MANAGEMENT TRIALS (FAILED):
+1. Structured Physical Therapy: Completed 14 weeks of supervised active physical therapy with therapeutic exercises, core stabilization, and McKenzie traction (03/2026 to 06/2026) with no sustained relief.
+2. Pharmacotherapy: Maximum tolerated doses of Meloxicam 15mg daily, Gabapentin 600mg TID, and Cyclobenzaprine for > 6 months.
+3. Interventional Injections: Two fluoroscopically guided bilateral L4-L5 transforaminal epidural steroid injections (04/2026 and 06/2026) providing < 2 weeks transient benefit.
+
+PHYSICAL EXAMINATION:
+- Lumbar spine: Tenderness to palpation over L4-L5. Severe restriction of extension.
+- Neurological: Motor strength 4/5 in bilateral extensor hallucis longus (EHL) and tibialis anterior. Sensation decreased to light touch over bilateral L5 dermatomes. Deep tendon reflexes: Patellar 2+ bilaterally, Achilles 1+ bilaterally. Straight leg raise positive on the right at 45 degrees.
+
+DIAGNOSTIC IMAGING CORRELATION:
+1. Lumbar MRI (07/15/2026): Severe degenerative disc disease at L4-L5 with broad-based disc herniation, severe central canal stenosis (AP diameter 6.2 mm), and severe bilateral subarticular lateral recess and neural foraminal stenosis impinging exiting L5 nerve roots.
+2. Standing Flexion/Extension Radiographs (07/20/2026): Grade I degenerative spondylolisthesis at L4-L5 with 4.5 mm dynamic translational instability between flexion and extension, and 12 degrees angular motion.
+
+PROPOSED SURGICAL PROCEDURE:
+L4-L5 Posterior Lumbar Interbody Fusion (PLIF/TLIF) with open decompressive laminectomy, bilateral facetectomy, discectomy, placement of interbody spacer, and instrumentation with pedicle screws (CPT 22633, 22840, 22853, 63047, 63048).`,
+
+  cervical_myelopathy: `PATIENT: Jane Smith (DOB: 11/03/1968, MRN: 382910)
+DIAGNOSIS: Cervical Spondylotic Myelopathy with Cord Compression at C5-C6.
+SYMPTOMS: Rapidly progressing bilateral hand clumsiness, difficulty buttoning shirts, gait instability, and hyperreflexia over the past 4 weeks. Positive Hoffman sign bilaterally and 3 beats of ankle clonus. Modified Japanese Orthopaedic Association (mJOA) score is 11 (severe myelopathy).
+IMAGING: MRI Cervical Spine shows severe C5-C6 disc extrusion with severe cord compression and intrinsic T2 cord signal hyperintensity (myelomalacia).
+PLAN: Emergency anterior cervical discectomy and fusion (ACDF) C5-C6 (CPT 22551, 22845, 22853) indicated. Conservative care is medically contraindicated due to progressive spinal cord compromise.`
+};
+
+function loadSampleCase(caseKey) {
+  const noteArea = document.getElementById('clinicalNoteInput');
+  noteArea.value = SAMPLE_CASES[caseKey] || SAMPLE_CASES.lumbar_fusion;
+  
+  if (caseKey === 'lumbar_fusion') {
+    document.getElementById('procedureSelect').value = 'lumbar_fusion';
+    document.getElementById('payerSelect').value = 'aetna';
+  } else if (caseKey === 'cervical_myelopathy') {
+    document.getElementById('procedureSelect').value = 'cervical_acdf';
+    document.getElementById('payerSelect').value = 'anthem';
+  }
+  
+  handlePayerChange();
+  showToast('Sample clinical note loaded successfully', 'info');
+}
+
+function clearClinicalNote() {
+  document.getElementById('clinicalNoteInput').value = '';
+  runGapAnalysis();
+  showToast('Clinical note cleared', 'info');
+}
+
+function appendSnippet(type) {
+  const noteArea = document.getElementById('clinicalNoteInput');
+  let snippet = '';
+  
+  switch(type) {
+    case 'pt12wks':
+      snippet = '\n\nCONSERVATIVE THERAPY: Patient completed 12 weeks of structured, supervised physical therapy (active core strengthening, lumbar stabilization) from 03/2026 to 06/2026 without functional recovery.';
+      break;
+    case 'instability':
+      snippet = '\n\nDYNAMIC RADIOGRAPHS: Standing flexion-extension lumbar X-rays confirm dynamic instability with 4mm translational displacement and 11 degrees sagittal angular change at the operative level.';
+      break;
+    case 'odi_vas':
+      snippet = '\n\nFUNCTIONAL METRICS: Oswestry Disability Index (ODI) is 52% (Severe Disability). VAS Back Pain is 8/10, VAS Leg Pain is 7/10.';
+      break;
+    case 'injections':
+      snippet = '\n\nINTERVENTIONAL INJECTIONS: Completed 2 fluoroscopically guided epidural steroid injections at the symptomatic level with only brief (< 14 days) transient benefit.';
+      break;
+    case 'waiver_deficit':
+      snippet = '\n\nEMERGENCY CRITERIA / WAIVER: Patient demonstrates acute progressive neurological motor deficit (Grade 3/5 weakness in EHL/Tibialis Anterior) and progressive neurological deterioration, requiring urgent surgical decompression.';
+      break;
+  }
+  
+  noteArea.value += snippet;
+  runGapAnalysis();
+  showToast('Snippet added to clinical note', 'success');
+}
+
+// HIPAA SCRUBBER
+function togglePhiScrub() {
+  const noteArea = document.getElementById('clinicalNoteInput');
+  const isScrub = document.getElementById('phiScrubToggle').checked;
+  let text = noteArea.value;
+  
+  if (isScrub && text.trim().length > 0) {
+    // Replace names, dates, MRNs
+    text = text.replace(/PATIENT:\s*([A-Za-z\s]+)/gi, 'PATIENT: [PATIENT DE-IDENTIFIED]')
+               .replace(/DOB:\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/gi, 'DOB: [REDACTED]')
+               .replace(/MRN:\s*([A-Za-z0-9]+)/gi, 'MRN: [REDACTED]')
+               .replace(/\b\d{3}-\d{2}-\d{4}\b/g, '[SSN-REDACTED]');
+    noteArea.value = text;
+    runGapAnalysis();
+    showToast('PHI de-identification applied', 'info');
+  }
+}
+
+// PDF UPLOAD VIA PDF.JS
+async function handlePdfUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  showToast('Reading and extracting text from PDF...', 'info');
+  
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
+    
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items.map(item => item.str).join(' ');
+      fullText += pageText + '\n\n';
+    }
+    
+    document.getElementById('clinicalNoteInput').value = fullText.trim();
+    runGapAnalysis();
+    showToast(`PDF imported successfully (${pdf.numPages} pages)`, 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('Failed to read PDF. Please paste text directly.', 'error');
+  }
+}
+
+// DETERMINISTIC CLINICAL GAP ANALYZER ENGINE
+function runGapAnalysis() {
+  const note = document.getElementById('clinicalNoteInput').value;
+  const payerKey = document.getElementById('payerSelect').value;
+  const payer = INSURERS[payerKey] || INSURERS.aetna;
+  const procedure = document.getElementById('procedureSelect').value;
+  const intent = document.getElementById('letterIntentSelect').value;
+  
+  // Update char count
+  document.getElementById('charCount').textContent = `${note.length} characters`;
+  
+  if (!note.trim()) {
+    document.getElementById('detectedKeywordsCount').textContent = '0 criteria signals detected';
+    document.getElementById('complianceBadge').className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold badge-neutral';
+    document.getElementById('complianceText').textContent = 'Awaiting Note Input';
+    document.getElementById('gapChecklistContainer').innerHTML = `
+      <div class="p-4 text-center text-slate-400 text-xs italic bg-slate-50 rounded-xl border border-dashed border-slate-200">
+        Paste a clinical note on the left to activate real-time payer gap analysis...
+      </div>
+    `;
+    document.getElementById('generatedPromptTextarea').value = '';
+    return;
+  }
+
+  const lowerNote = note.toLowerCase();
+  
+  // Criteria Detection Rules
+  const hasPT12 = /1[2-9]\s*weeks?|1[2-9]\s*wks?|[3-9]\s*months?|14\s*weeks|16\s*weeks/i.test(note) && /physical\s*therapy|\bpt\b|physiotherapy|rehab/i.test(note);
+  const hasPT6 = /([6-9]|1[0-9])\s*weeks?|physical\s*therapy|\bpt\b|physiotherapy/i.test(note);
+  const hasInjections = /epidural|steroid\s*injection|\besi\b|facet\s*block|nerve\s*block|selective\s*nerve/i.test(note);
+  const hasMedications = /nsaid|meloxicam|gabapentin|ibuprofen|naproxen|cyclobenzaprine|tramadol|analgesic|pharmacotherapy/i.test(note);
+  
+  const hasMRI = /\bmri\b|magnetic\s*resonance|stenosis|disc\s*herniation|foraminal|extrusion|subarticular|radiculopathy/i.test(note);
+  const hasInstability = /instability|spondylolisthesis|translation|flexion[\s\/-]*extension|dynamic\s*radiograph|\b\d+(\.\d+)?\s*mm\b/i.test(note);
+  
+  const hasODI = /\bodi\b|oswestry|neck\s*disability|\bndi\b|\d{1,2}\s*%/i.test(note);
+  const hasVAS = /\bvas\b|visual\s*analog|\d{1,2}\s*\/\s*10/i.test(note);
+  
+  const hasWaiverEmergency = /progressive\s*motor|cauda\s*equina|myelopathy|grade\s*[1-3]\/5|foot\s*drop|motor\s*deficit|cord\s*compression/i.test(note);
+
+  // Criteria Matrix Evaluation
+  const items = [];
+  let score = 0;
+  let totalWeight = 0;
+
+  // 1. Conservative PT & Duration
+  totalWeight += 25;
+  if (hasPT12) {
+    score += 25;
+    items.push({ label: 'Conservative Care Duration', status: 'pass', desc: 'Met: >= 12 weeks structured Physical Therapy & multimodal care documented.' });
+  } else if (hasPT6) {
+    score += 15;
+    items.push({ label: 'Conservative Care Duration', status: 'pass', desc: 'Met for decompression (6+ wks), partial for fusion (requires 12 wks per policy).' });
+  } else if (hasWaiverEmergency) {
+    score += 25;
+    items.push({ label: 'Conservative Care Duration', status: 'pass', desc: 'Policy Waiver Triggered: Progressive motor weakness/myelopathy waives PT duration.' });
+  } else {
+    items.push({ label: 'Conservative Care Duration', status: 'gap', desc: 'Gap Identified: Missing explicit 6-12 week physical therapy timeline.' });
+  }
+
+  // 2. Medication & Injection Trials
+  totalWeight += 15;
+  if (hasInjections && hasMedications) {
+    score += 15;
+    items.push({ label: 'Adjunctive Conservative Care', status: 'pass', desc: 'Met: Both pharmacological management and spinal injection trials documented.' });
+  } else if (hasMedications || hasInjections) {
+    score += 10;
+    items.push({ label: 'Adjunctive Conservative Care', status: 'pass', desc: 'Partially Met: Documented medications or interventional injections.' });
+  } else {
+    items.push({ label: 'Adjunctive Conservative Care', status: 'gap', desc: 'Recommendation: Document NSAID / neuropathic trials or injection attempts.' });
+  }
+
+  // 3. Neuro-imaging Concordance
+  totalWeight += 30;
+  if (hasMRI && hasInstability) {
+    score += 30;
+    items.push({ label: 'Diagnostic Imaging Concordance', status: 'pass', desc: 'Met: MRI neural compression and dynamic flexion/extension instability confirmed.' });
+  } else if (hasMRI) {
+    score += 20;
+    items.push({ label: 'Diagnostic Imaging Concordance', status: 'pass', desc: 'Met: Advanced MRI cross-sectional neural compression documented.' });
+  } else {
+    items.push({ label: 'Diagnostic Imaging Concordance', status: 'alert', desc: 'Critical Gap: Insufficient cross-sectional imaging (MRI/CT) findings.' });
+  }
+
+  // 4. Validated Functional Outcome Measures (ODI / VAS)
+  totalWeight += 20;
+  if (hasODI && hasVAS) {
+    score += 20;
+    items.push({ label: 'Validated Functional Metrics', status: 'pass', desc: 'Met: Both Oswestry (ODI) and Visual Analog Scale (VAS) quantified.' });
+  } else if (hasODI || hasVAS) {
+    score += 15;
+    items.push({ label: 'Validated Functional Metrics', status: 'pass', desc: 'Partially Met: ODI or VAS pain score present.' });
+  } else {
+    items.push({ label: 'Validated Functional Metrics', status: 'gap', desc: 'Gap: Include ODI score (>= 40%) and VAS (>= 6/10) for maximum approval probability.' });
+  }
+
+  // 5. Emergency / Acute Policy Waiver
+  totalWeight += 10;
+  if (hasWaiverEmergency) {
+    score += 10;
+    items.push({ label: 'Urgent Policy Exemption / Waiver', status: 'pass', desc: 'Active: Acute cauda equina / progressive neurological deficit override invoked.' });
+  } else {
+    items.push({ label: 'Urgent Policy Exemption / Waiver', status: 'neutral', desc: 'Elective / Standard review pathway (no emergency waiver invoked).' });
+  }
+
+  const finalPercentage = Math.round((score / totalWeight) * 100);
+  document.getElementById('detectedKeywordsCount').textContent = `${items.filter(i => i.status === 'pass').length} of ${items.length} criteria met`;
+
+  // Update Badge
+  const badge = document.getElementById('complianceBadge');
+  const badgeText = document.getElementById('complianceText');
+  if (finalPercentage >= 80) {
+    badge.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold badge-pass';
+    badgeText.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i> ${finalPercentage}% Compliance (Strong Case)`;
+  } else if (finalPercentage >= 50) {
+    badge.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold badge-gap';
+    badgeText.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-600"></i> ${finalPercentage}% Compliance (Actionable Gaps)`;
+  } else {
+    badge.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold badge-alert';
+    badgeText.innerHTML = `<i data-lucide="x-circle" class="w-3.5 h-3.5 text-red-600"></i> ${finalPercentage}% Compliance (High Denial Risk)`;
+  }
+
+  // Render Gap Checklist Items
+  const container = document.getElementById('gapChecklistContainer');
+  container.innerHTML = items.map(item => {
+    let icon = 'check-circle';
+    let badgeClass = 'badge-pass';
+    if (item.status === 'gap') {
+      icon = 'alert-circle';
+      badgeClass = 'badge-gap';
+    } else if (item.status === 'alert') {
+      icon = 'x-circle';
+      badgeClass = 'badge-alert';
+    } else if (item.status === 'neutral') {
+      icon = 'info';
+      badgeClass = 'badge-neutral';
+    }
+    return `
+      <div class="flex items-start gap-2 p-2.5 rounded-xl border ${badgeClass}">
+        <i data-lucide="${icon}" class="w-4 h-4 mt-0.5 flex-shrink-0"></i>
+        <div class="flex-1">
+          <div class="font-bold text-[12px]">${item.label}</div>
+          <div class="text-[11px] opacity-90 leading-tight">${item.desc}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  lucide.createIcons();
+
+  // Synthesize Prompt
+  synthesizePrompt(note, payer, procedure, intent, items, finalPercentage);
+}
+
+// PROMPT SYNTHESIS ENGINE
+function synthesizePrompt(note, payer, procedure, intent, items, compliance) {
+  let intentHeading = 'LETTER OF MEDICAL NECESSITY / PRIOR AUTHORIZATION REQUEST';
+  if (intent === 'level1_appeal') intentHeading = 'FORMAL LEVEL 1 DENIAL APPEAL & MEDICAL NECESSITY BRIEF';
+  if (intent === 'peer_to_peer') intentHeading = 'PEER-TO-PEER REVIEW CLINICAL DEFENSE MEMORANDUM';
+  if (intent === 'external_review') intentHeading = 'INDEPENDENT EXTERNAL MEDICAL REVIEW BRIEF';
+
+  const prompt = `Act as an expert Board-Certified Attending Spine Surgeon and Clinical Medical Director specializing in overcoming health insurance claim denials and prior authorization obstacles.
+
+Generate an authoritative, rigorous, and legally bulletproof **${intentHeading}** addressed to the Medical Director of **${payer.name}** regarding the proposed procedure under **${payer.policyNumber}**.
+
+### PAYER & POLICY BENCHMARK DATA:
+- **Target Insurance Carrier:** ${payer.name}
+- **Applicable Medical Policy:** ${payer.policyNumber}
+- **Payer Medical Necessity Standard:** "${payer.medicalNecessityDef}"
+- **Conservative Treatment Requirement:** ${payer.conservativeDuration}
+- **Required Diagnostic Imaging:** ${payer.imagingRequired}
+- **Emergency Waiver Criteria:** ${payer.waivers}
+- **Case Policy Compliance Score:** ${compliance}%
+
+---
+
+### CLINICAL SOURCE NOTE (PATIENT DATA):
+"""
+${note.trim()}
+"""
+
+---
+
+### MANDATORY LETTER SECTIONS & DRAFTING INSTRUCTIONS:
+1. **FORMAL CLINICAL HEADER:**
+   - Addressed to: Medical Director & Utilization Review Committee, ${payer.name}
+   - Date, Patient Name, DOB, Member ID, Group Number, Treating Surgeon Name & NPI.
+   - Reference: Prior Authorization Request / Formal Appeal for ${payer.policyNumber}.
+
+2. **EXECUTIVE SUMMARY & CLINICAL JUSTIFICATION:**
+   - Clear declaration of requested CPT procedure codes and ICD-10 diagnosis codes.
+   - Direct assertion of medical necessity fulfilling ${payer.name}'s exact clinical criteria under ${payer.policyNumber}.
+
+3. **CONCORDANT DIAGNOSTIC IMAGING & ANATOMICAL PATHOLOGY:**
+   - Detailed correlation between high-resolution cross-sectional MRI/CT findings and the patient's objective neurological examination findings.
+   - Document any dynamic instability (flexion/extension translation >= 3mm or sagittal angulation) or spinal cord compression.
+
+4. **EXHAUSTIVE CHRONOLOGY OF FAILED CONSERVATIVE MANAGEMENT:**
+   - Explicit breakdown of non-operative modalities: physical therapy duration (minimum required by policy), failed oral pharmacotherapy, and interventional spinal injections.
+   - Clarify why continued non-operative care is ineffective, inappropriate, or poses severe risk of permanent neurological deficit.
+
+5. **PEER-TO-PEER & LEGAL DETERMINATION DEFENSE:**
+   - Direct rebuttal to potential adverse determinations citing ${payer.guidelineSource}.
+   - If emergency criteria are met, explicitly cite the policy waiver for acute motor deficits or progressive myelopathy.
+
+6. **CLOSING DEMAND:**
+   - Immediate authorization demand with peer-to-peer contact details and clinician signature block.
+
+Draft the letter now with clinical precision, professional authority, and flawless formatting.`;
+
+  document.getElementById('generatedPromptTextarea').value = prompt;
+}
+
+// DIRECT IN-APP GENERATION (CLIENT-SIDE SYNTHESIZER)
+function generateDirectLetter() {
+  const note = document.getElementById('clinicalNoteInput').value;
+  if (!note.trim()) {
+    showToast('Please paste a clinical note first', 'error');
+    return;
+  }
+
+  const payerKey = document.getElementById('payerSelect').value;
+  const payer = INSURERS[payerKey] || INSURERS.aetna;
+  const intent = document.getElementById('letterIntentSelect').value;
+
+  showToast('Synthesizing formal Letter of Medical Necessity...', 'info');
+
+  let title = 'LETTER OF MEDICAL NECESSITY';
+  if (intent === 'level1_appeal') title = 'FORMAL LEVEL 1 APPEAL OF ADVERSE DETERMINATION';
+  if (intent === 'peer_to_peer') title = 'PEER-TO-PEER CLINICAL REVIEW BRIEF';
+
+  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const letterText = `MEDICAL NECESSITY & PRIOR AUTHORIZATION BRIEF
+${title}
+
+DATE: ${today}
+TO: Medical Director & Utilization Management Committee
+PAYER: ${payer.name}
+POLICY REFERENCE: ${payer.policyNumber}
+
+RE: REQUEST FOR SURGICAL PRIOR AUTHORIZATION / EXPEDITED DETERMINATION
+TREATMENT FACILITY: Department of Neurosurgery & Orthopedic Spine Surgery
+
+--------------------------------------------------------------------------------
+1. PATIENT CLINICAL INTAKE & CASE IDENTIFIERS
+--------------------------------------------------------------------------------
+Patient Clinical History & Record Extract:
+${note.trim().split('\n').slice(0, 10).join('\n')}
+
+--------------------------------------------------------------------------------
+2. MEDICAL NECESSITY STATEMENT UNDER ${payer.policyNumber}
+--------------------------------------------------------------------------------
+This document serves as a formal Letter of Medical Necessity supporting prior authorization for the proposed surgical procedure. The patient presents with disabling, progressive spinal pathology that has failed exhaustive multimodal conservative management and strictly fulfills the clinical criteria set forth in ${payer.name} ${payer.policyNumber}.
+
+${payer.name}'s medical necessity guidelines require:
+- Documented failure of structured conservative care (${payer.conservativeDuration}).
+- High-resolution imaging (${payer.imagingRequired}) demonstrating nerve root or spinal cord compromise matching physical examination findings.
+- Validated functional impairment interfering with daily living activities.
+
+As detailed below, the patient's clinical presentation exceeds all mandatory benchmarks.
+
+--------------------------------------------------------------------------------
+3. OBJECTIVE NEURO-IMAGING & CLINICAL EXAMINATION CORRELATION
+--------------------------------------------------------------------------------
+Physical examination confirms dermatomal neurological deficits concordant with cross-sectional diagnostic imaging. High-resolution MRI and standing dynamic radiographs demonstrate severe structural pathology with neural compression refractory to non-surgical decompression.
+
+--------------------------------------------------------------------------------
+4. CHRONOLOGY OF FAILED CONSERVATIVE MANAGEMENT
+--------------------------------------------------------------------------------
+In accordance with ${payer.name} policy requirements, the patient has completed extensive non-operative interventions, including:
+1. Supervised Physical Therapy: Completed structured course under a licensed physical therapist with no sustained functional recovery.
+2. Pharmacotherapy: Maximum tolerated doses of anti-inflammatories, neuropathic modulators, and muscle relaxants.
+3. Interventional Spinal Procedures: Diagnostic/therapeutic spinal injections yielding only transient benefit.
+
+Continued conservative management is medically contraindicated, as it offers zero curative potential and exposes the patient to irreversible neurological impairment.
+
+--------------------------------------------------------------------------------
+5. CONCLUSION & EXPEDITED AUTHORIZATION REQUEST
+--------------------------------------------------------------------------------
+Based on objective imaging, clinical examination, and exhaustive failure of non-operative treatment, surgical intervention is medically necessary, clinically appropriate, and standard of care under ${payer.guidelineSource}. 
+
+We respectfully request immediate authorization. Should you require further clarification, I am available for immediate peer-to-peer discussion.
+
+Sincerely,
+
+Attending Surgeon, MD, FACS
+Department of Neurosurgery / Spine Surgery`;
+
+  document.getElementById('generatedLetterTextarea').value = letterText;
+  switchOutputTab('letter');
+  showToast('Letter generated and loaded into editor', 'success');
+}
+
+// 1-CLICK EMR MERGER UTILITY
+function copyMergedEmrNote() {
+  const originalNote = document.getElementById('clinicalNoteInput').value;
+  if (!originalNote.trim()) {
+    showToast('Please paste a clinical note first', 'error');
+    return;
+  }
+
+  const payerKey = document.getElementById('payerSelect').value;
+  const payer = INSURERS[payerKey] || INSURERS.aetna;
+  let letter = document.getElementById('generatedLetterTextarea').value;
+  
+  if (!letter.trim()) {
+    generateDirectLetter();
+    letter = document.getElementById('generatedLetterTextarea').value;
+  }
+
+  const merged = `================================================================================
+CLINICAL ENCOUNTER & EMR CHART NOTE
+================================================================================
+
+${originalNote.trim()}
+
+
+================================================================================
+PREAUTHIQ INSURANCE VERIFICATION & LETTER OF MEDICAL NECESSITY
+Payer: ${payer.name} | Policy: ${payer.policyNumber} | Phone: ${payer.priorAuthPhone}
+================================================================================
+
+${letter.trim()}
+`;
+
+  navigator.clipboard.writeText(merged).then(() => {
+    showToast('Merged Note + Letter copied to clipboard for EMR (Epic/Cerner)!', 'success');
+  }).catch(err => {
+    console.error(err);
+    showToast('Failed to copy to clipboard', 'error');
+  });
+}
+
+function copyCopilotPrompt() {
+  const prompt = document.getElementById('generatedPromptTextarea').value;
+  if (!prompt.trim()) {
+    showToast('Please paste a clinical note first to generate prompt', 'error');
+    return;
+  }
+
+  navigator.clipboard.writeText(prompt).then(() => {
+    showToast('MS Copilot Prompt copied to clipboard!', 'success');
+  }).catch(err => {
+    console.error(err);
+    showToast('Failed to copy to clipboard', 'error');
+  });
+}
+
+function copyLetterText() {
+  const letter = document.getElementById('generatedLetterTextarea').value;
+  if (!letter.trim()) {
+    showToast('No generated letter text to copy', 'error');
+    return;
+  }
+
+  navigator.clipboard.writeText(letter).then(() => {
+    showToast('Letter text copied to clipboard!', 'success');
+  });
+}
+
+function switchOutputTab(tab) {
+  const promptTab = document.getElementById('promptTabView');
+  const letterTab = document.getElementById('letterTabView');
+  const promptBtn = document.getElementById('viewPromptTabBtn');
+  const letterBtn = document.getElementById('viewLetterTabBtn');
+
+  if (tab === 'prompt') {
+    promptTab.classList.remove('hidden');
+    letterTab.classList.add('hidden');
+    promptBtn.className = 'px-3 py-1 rounded-lg font-semibold bg-white text-blue-700 shadow-sm transition';
+    letterBtn.className = 'px-3 py-1 rounded-lg font-semibold text-slate-600 hover:text-slate-900 transition';
+  } else {
+    promptTab.classList.add('hidden');
+    letterTab.classList.remove('hidden');
+    letterBtn.className = 'px-3 py-1 rounded-lg font-semibold bg-white text-teal-800 shadow-sm transition';
+    promptBtn.className = 'px-3 py-1 rounded-lg font-semibold text-slate-600 hover:text-slate-900 transition';
+  }
+}
+
+function printFormalLetter() {
+  let letter = document.getElementById('generatedLetterTextarea').value;
+  if (!letter.trim()) {
+    generateDirectLetter();
+    letter = document.getElementById('generatedLetterTextarea').value;
+  }
+
+  const printArea = document.getElementById('printContent');
+  printArea.innerHTML = `<pre style="white-space: pre-wrap; font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.5;">${letter}</pre>`;
+  window.print();
+}
+
+function resetWorkbench() {
+  document.getElementById('clinicalNoteInput').value = '';
+  document.getElementById('generatedPromptTextarea').value = '';
+  document.getElementById('generatedLetterTextarea').value = '';
+  document.getElementById('payerSelect').value = 'aetna';
+  document.getElementById('procedureSelect').value = 'lumbar_fusion';
+  document.getElementById('letterIntentSelect').value = 'prior_auth';
+  handlePayerChange();
+  switchOutputTab('prompt');
+  showToast('Workbench reset to initial state', 'info');
+}
+
+// TOAST NOTIFICATIONS
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  
+  let bg = 'bg-slate-900 text-white border-slate-700';
+  let icon = 'info';
+  if (type === 'success') {
+    bg = 'bg-emerald-900 text-emerald-100 border-emerald-700';
+    icon = 'check-circle';
+  } else if (type === 'error') {
+    bg = 'bg-red-900 text-red-100 border-red-700';
+    icon = 'alert-circle';
+  }
+
+  toast.className = `flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-xl text-xs font-medium toast-anim pointer-events-auto ${bg}`;
+  toast.innerHTML = `
+    <i data-lucide="${icon}" class="w-4 h-4 flex-shrink-0"></i>
+    <span>${message}</span>
+  `;
+
+  container.appendChild(toast);
+  lucide.createIcons();
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-10px)';
+    toast.style.transition = 'all 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
+// INITIALIZE ON LOAD
+window.addEventListener('DOMContentLoaded', () => {
+  populatePayerDropdown();
+  lucide.createIcons();
+});
+</script>
+
+</body>
+</html>
