@@ -1,40 +1,31 @@
-# PreAuthIQ (v2.0 Clinical Edition)
+# PreAuthIQ (v3.0 Clinical Edition)
 
-**AI-powered surgical prior authorization, gap analysis, and medical necessity appeal studio.**
+**AI-powered surgical prior authorization, gap analysis, and medical necessity appeal studio for Spine and Orthopedic Surgery.**
 
-PreAuthIQ empowers surgeons, practice administrators, and clinical teams to overcome insurance claim denials and expedite pre-authorizations with zero friction.
+- 🌐 **Live GitHub Pages URL:** [https://alexmohit825.github.io/preauthIQ/](https://alexmohit825.github.io/preauthIQ/)
+- 👨‍⚕️ **Author:** Alex Mohit MD PhD, Neurological and Complex Spinal Surgeon
 
 ---
 
 ## ⚡ Core Capabilities
 
-- 🏥 **Comprehensive 60-Carrier Payer Knowledge Base:** Exhaustive medical policies across National Commercial (Aetna CPB 0743, Anthem CG-SURG-71/72/83, UHC 2023T0559U, Cigna 0263, Humana SUR-020), Regional Blue Cross Blue Shield plans (Premera, Regence, Blue Shield CA, IBX, Highmark, Florida Blue, HCSC, Horizon), Original Medicare LCDs & MACs (Noridian, Novitas, Palmetto, First Coast, NGS, CGS), Medicare Advantage, Medicaid MCOs (CHPW, Coordinated Care Evolent CG-1766/1759, Molina, Centene), Workers' Compensation Boards (WA L&I WAC 296-20, CA SCIF MTUS/ACOEM, Texas DWC, NYS WCB MTGs, FECA OWCP), Military/VA (TRICARE, VA CCN TriWest/Optum, UMP/PEBB), and universal utilization engines (InterQual, MCG).
-- 🔍 **Real-Time Payer Gap Analysis Matrix:** Side-by-side verification of physical therapy duration, diagnostic imaging concordance (MRI/CT), dynamic flexion/extension instability (>= 3mm), validated functional outcome measures (ODI >= 40%, VAS >= 6/10), and acute emergency waivers (progressive motor weakness Grade <= 3/5, cauda equina, cervical myelopathy).
-- 📋 **Dual-Mode Generation:** 
-  1. **MS Copilot / ChatGPT Prompt Synthesizer:** 1-click tailored prompt generation citing exact policy numbers and peer-to-peer defense arguments.
-  2. **1-Click Direct Letter Generator:** In-browser instant synthesis and editable letter drafting.
-- 📄 **1-Click EMR Note Merger:** Automatically stitches the original clinical note + insurance verification header + medical necessity letter ready for pasting straight into Epic, Cerner, AthenaHealth, or NextGen.
-- 🔒 **Zero-Leakage Local HIPAA Shield:** 100% client-side computation with one-click PHI de-identification.
+- 🏥 **Comprehensive 74-Carrier Insurance Knowledge Base:** Complete national commercial, Blue Cross Blue Shield, Medicare LCDs/MACs, Medicare Advantage, Medicaid MCOs, Workers' Comp (WA L&I, CA SCIF, SAIF Oregon, Texas DWC, NYS WCB), Military/VA (TRICARE, VA CCN, UMP/PEBB), and major utilization review engines (Carelon/AIM, InterQual, Milliman MCG).
+- 🌲 **Dedicated Washington & Oregon (PNW) Sector Suite:** 21 specialized Pacific Northwest payers including Premera, Regence (WA & OR), Asuris, WA L&I, SAIF Corporation, Apple Health (CHPW, Coordinated Care, Wellpoint WA, Molina), Oregon Health Plan (OHP / HERC Guideline Notes 56 & 37), CareOregon / Health Share CCO, Samaritan Health, KPWA, Moda, PacificSource, and First Choice Health.
+- 📋 **Tri-Mode Generation Hub:**
+  1. **Option 1 (Two-Stage Copilot Mode):** 1-click prompt synthesis formatted specifically for Microsoft Copilot or ChatGPT.
+  2. **Option 2 (On-Device Fast Synthesizer):** Zero-latency deterministic template generation running 100% locally with zero API key needed.
+  3. **Option 3 (Direct Cloud LLM):** Direct client-to-API connection supporting Google Gemini (1.5 Pro / Flash), OpenAI (GPT-4o / 4o-mini), and Anthropic (Claude 3.5 Sonnet).
+- 🩺 **EPIC EMR Clipboard Optimization:**
+  - `[📥 Paste from EPIC]` and `[+ Append EPIC]` multi-snippet clipboard ingestion.
+  - Formats output titled **`Medical Necessity Letter`** signed by **Alex Mohit MD PhD, Neurological and Complex Spinal Surgeon**.
+  - `[📋 Copy Letter for EPIC]` for instant paste into Epic NoteWriter / SmartText addenda.
+- 🔍 **Instant Carrier Auto-Resolver:** Simply type any carrier name (e.g. `Devoted`, `Carelon`, `CareSource`, `Kaiser`, `Harvard Pilgrim`, `Tufts`, `SCAN`, `Zing Health`, `Clever Care`, `Sentara`) to auto-populate exact guidelines in 1 second.
+- ⚖️ **Unlisted Medicare Advantage Parity:** Automatically leverages **42 CFR § 422.101** against obscure Advantage plans.
+- 🔒 **Zero-Leakage HIPAA Privacy Shield:** 100% client-side computation with one-click PHI de-identification.
 - 🖨️ **Print & Clean PDF Export:** Instant letterhead formatting for faxing or portal upload.
 
 ---
 
-## 🚀 Deployment (Netlify & Vercel)
+## 🚀 GitHub Pages Automated CI/CD
 
-PreAuthIQ is engineered as a high-performance, zero-dependency standalone web app.
-
-### Deploy to Netlify
-1. Push to your GitHub repository: `alexmohit825/preauthIQ`.
-2. Connect repository in Netlify.
-3. Publish directory: `.` (root).
-
-### Local Preview
-Open `index.html` directly in any modern web browser or run:
-```bash
-npx serve .
-```
-
----
-
-## 📜 Architecture & Isolation
-PreAuthIQ is fully independent and isolated from `NecessityIQ` and other projects. All insurance guidelines and parser engines operate strictly within this repository.
+This repository is configured with `.github/workflows/deploy_pages.yml` to automatically build and deploy the app to GitHub Pages on every push to `main`.
