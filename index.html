@@ -267,6 +267,15 @@ body { font-family: 'Inter', sans-serif; background-color: #f8f4f1; color: #1e29
         
         <!-- Intake Tools (PDF Upload, Scrub PHI, Paste) -->
         <div class="flex items-center gap-2 text-xs">
+          <!-- 1-Click Paste / Append from EPIC -->
+          <button type="button" onclick="pasteFromEpic(false)" class="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white px-2.5 py-1 rounded-lg font-bold shadow-xs transition" title="Paste text directly from EPIC clipboard">
+            <i data-lucide="clipboard-paste" class="w-3.5 h-3.5"></i>
+            <span>Paste from EPIC</span>
+          </button>
+          <button type="button" onclick="pasteFromEpic(true)" class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-200 font-semibold transition" title="Append additional snippet from EPIC without clearing existing note">
+            <i data-lucide="plus" class="w-3.5 h-3.5 text-blue-600"></i>
+            <span>+ Append EPIC</span>
+          </button>
           <!-- De-Identify PHI Toggle -->
           <label class="flex items-center gap-1.5 cursor-pointer select-none text-slate-600 hover:text-slate-900 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 transition" title="Scrub patient names, DOB, MRN">
             <input type="checkbox" id="phiScrubToggle" onchange="togglePhiScrub()" class="rounded text-blue-600 focus:ring-0">
@@ -429,7 +438,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f8f4f1; color: #1e29
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <button onclick="copyLetterText()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-2">
               <i data-lucide="copy" class="w-4 h-4"></i>
-              <span>Copy Letter</span>
+              <span>📋 Copy Letter for EPIC</span>
             </button>
             <button onclick="copyMergedEmrNote()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-2">
               <i data-lucide="clipboard-check" class="w-4 h-4 text-emerald-400"></i>
@@ -1888,10 +1897,10 @@ function runGapAnalysis() {
   synthesizePrompt(note, payer, procedure, intent, items, finalPercentage);
 }
 function synthesizePrompt(note, payer, procedure, intent, items, compliance) {
-  let intentHeading = 'LETTER OF MEDICAL NECESSITY / PRIOR AUTHORIZATION REQUEST';
-  if (intent === 'level1_appeal') intentHeading = 'FORMAL LEVEL 1 DENIAL APPEAL & MEDICAL NECESSITY BRIEF';
-  if (intent === 'peer_to_peer') intentHeading = 'PEER-TO-PEER REVIEW CLINICAL DEFENSE MEMORANDUM';
-  if (intent === 'external_review') intentHeading = 'INDEPENDENT EXTERNAL MEDICAL REVIEW BRIEF';
+  let intentHeading = 'Medical Necessity Letter';
+  if (intent === 'level1_appeal') intentHeading = 'Medical Necessity Letter (Level 1 Denial Appeal)';
+  if (intent === 'peer_to_peer') intentHeading = 'Medical Necessity Letter (Peer-to-Peer Defense Brief)';
+  if (intent === 'external_review') intentHeading = 'Medical Necessity Letter (External Review Brief)';
 
   const prompt = `Act as an expert Board-Certified Attending Spine Surgeon and Clinical Medical Director specializing in overcoming health insurance claim denials and prior authorization obstacles.
 
@@ -1918,7 +1927,7 @@ ${note.trim()}
 ### MANDATORY LETTER SECTIONS & DRAFTING INSTRUCTIONS:
 1. **FORMAL CLINICAL HEADER:**
    - Addressed to: Medical Director & Utilization Review Committee, ${payer.name}
-   - Date, Patient Name, DOB, Member ID, Group Number, Treating Surgeon Name & NPI.
+   - Date, Patient Name, DOB, Member ID, Group Number, Treating Surgeon: Alex Mohit MD PhD, Neurological and Complex Spinal Surgeon.
    - Reference: Prior Authorization Request / Formal Appeal for ${payer.policyNumber}.
 
 2. **EXECUTIVE SUMMARY & CLINICAL JUSTIFICATION:**
@@ -1938,7 +1947,11 @@ ${note.trim()}
    - If emergency criteria are met, explicitly cite the policy waiver for acute motor deficits or progressive myelopathy.
 
 6. **CLOSING DEMAND:**
-   - Immediate authorization demand with peer-to-peer contact details and clinician signature block.
+   - Immediate authorization demand with peer-to-peer contact details and clinician signature block formatted exactly as:
+   Sincerely,
+
+   Alex Mohit MD PhD
+   Neurological and Complex Spinal Surgeon
 
 Draft the letter now with clinical precision, professional authority, and flawless formatting.`;
 
@@ -1959,14 +1972,15 @@ function generateDirectLetter() {
 
   showToast('Synthesizing formal Letter of Medical Necessity...', 'info');
 
-  let title = 'LETTER OF MEDICAL NECESSITY';
-  if (intent === 'level1_appeal') title = 'FORMAL LEVEL 1 APPEAL OF ADVERSE DETERMINATION';
-  if (intent === 'peer_to_peer') title = 'PEER-TO-PEER CLINICAL REVIEW BRIEF';
+  let title = 'Medical Necessity Letter';
+  if (intent === 'level1_appeal') title = 'Medical Necessity Letter (Level 1 Denial Appeal)';
+  if (intent === 'peer_to_peer') title = 'Medical Necessity Letter (Peer-to-Peer Defense)';
 
   const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  const letterText = `MEDICAL NECESSITY & PRIOR AUTHORIZATION BRIEF
-${title}
+  const letterText = `================================================================================
+${title.toUpperCase()}
+================================================================================
 
 DATE: ${today}
 TO: Medical Director & Utilization Management Committee
@@ -2018,8 +2032,8 @@ We respectfully request immediate authorization. Should you require further clar
 
 Sincerely,
 
-Attending Surgeon, MD, FACS
-Department of Neurosurgery / Spine Surgery`;
+Alex Mohit MD PhD
+Neurological and Complex Spinal Surgeon`;
 
   document.getElementById('generatedLetterTextarea').value = letterText;
   switchOutputTab('letter');
@@ -2051,7 +2065,8 @@ ${originalNote.trim()}
 
 
 ================================================================================
-PREAUTHIQ INSURANCE VERIFICATION & LETTER OF MEDICAL NECESSITY
+PREAUTHIQ INSURANCE VERIFICATION & MEDICAL NECESSITY LETTER
+Surgeon: Alex Mohit MD PhD | Neurological and Complex Spinal Surgeon
 Payer: ${payer.name} | Policy: ${payer.policyNumber} | Phone: ${payer.priorAuthPhone}
 ================================================================================
 
@@ -2081,7 +2096,55 @@ function copyCopilotPrompt() {
   });
 }
 
+
+// EPIC EMR CLIPBOARD INTEGRATION
+async function pasteFromEpic(append = false) {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text || !text.trim()) {
+      showToast('Clipboard is empty. Copy text in EPIC first!', 'error');
+      return;
+    }
+
+    const noteArea = document.getElementById('clinicalNoteInput');
+    if (append && noteArea.value.trim().length > 0) {
+      noteArea.value = noteArea.value.trim() + '\n\n--- EPIC NOTE EXTRACT ---\n' + text.trim();
+      showToast('Appended snippet from EPIC clipboard', 'success');
+    } else {
+      noteArea.value = text.trim();
+      showToast('Pasted note from EPIC clipboard', 'success');
+    }
+
+    runGapAnalysis();
+  } catch (err) {
+    console.error(err);
+    showToast('Browser clipboard access blocked. Please press Ctrl+V in the box.', 'info');
+    document.getElementById('clinicalNoteInput').focus();
+  }
+}
+
+// Copy Letter directly formatted for pasting at the end of EPIC note
 function copyLetterText() {
+  let letter = document.getElementById('generatedLetterTextarea').value;
+  if (!letter.trim()) {
+    generateDirectLetter();
+    letter = document.getElementById('generatedLetterTextarea').value;
+  }
+
+  // Ensure title and Dr. Alex Mohit signature are present
+  if (!letter.includes('Alex Mohit MD PhD')) {
+    letter = letter.trim() + '\n\nSincerely,\n\nAlex Mohit MD PhD\nNeurological and Complex Spinal Surgeon';
+  }
+
+  navigator.clipboard.writeText(letter).then(() => {
+    showToast('Medical Necessity Letter copied! Ready to paste into EPIC at end of note.', 'success');
+  }).catch(err => {
+    console.error(err);
+    showToast('Failed to copy to clipboard', 'error');
+  });
+}
+
+function copyLetterText_old() {
   const letter = document.getElementById('generatedLetterTextarea').value;
   if (!letter.trim()) {
     showToast('No generated letter text to copy', 'error');
