@@ -119,6 +119,11 @@ body { font-family: 'Inter', sans-serif; background-color: #f8f4f1; color: #1e29
 
     <!-- Quick Action / Workflow Links -->
     <div class="flex items-center gap-2.5">
+      
+      <button onclick="openAddPayerModal()" class="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg shadow-sm transition flex items-center gap-1.5" title="Add a custom insurance carrier with instant guidelines">
+        <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+        <span>+ Add / Import Payer</span>
+      </button>
       <button onclick="loadSampleCase('lumbar_fusion')" class="text-xs px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg border border-slate-700 transition flex items-center gap-1.5">
         <i data-lucide="file-text" class="w-3.5 h-3.5 text-blue-400"></i>
         <span>Sample Note</span>
@@ -209,6 +214,21 @@ body { font-family: 'Inter', sans-serif; background-color: #f8f4f1; color: #1e29
         </div>
       </div>
 
+    
+      <!-- Dynamic Custom Payer / Unlisted MA Input Field -->
+      <div id="customPayerInputContainer" class="hidden md:col-span-12 bg-blue-50/80 border border-blue-200 rounded-xl p-3 mt-1">
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+          <div class="sm:col-span-7">
+            <label class="block text-[11px] font-bold uppercase text-blue-900 mb-1">
+              Unlisted Medicare Advantage / Custom Plan Name:
+            </label>
+            <input type="text" id="customPlanNameInput" oninput="handleCustomPlanNameChange()" placeholder="e.g., Zing Health MA, Clever Care, Devoted D-SNP, Prominence Health Plan..." class="w-full bg-white text-slate-800 text-xs font-semibold px-3 py-2 rounded-lg border border-blue-300 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+          <div class="sm:col-span-5 text-[11px] text-blue-800 leading-snug">
+            <span class="font-bold">⚖️ Statutory Parity Shield:</span> Under <strong>42 CFR § 422.101</strong>, this plan is legally prohibited from enforcing stricter clinical rules than Traditional Medicare LCDs.
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -407,6 +427,101 @@ body { font-family: 'Inter', sans-serif; background-color: #f8f4f1; color: #1e29
   </div>
 
 </main>
+
+
+<!-- ADD / IMPORT CUSTOM PAYER MODAL -->
+<div id="addPayerModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 max-w-xl w-full p-6 animate-in fade-in duration-200">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+          <i data-lucide="building-2" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-900 text-base">Add & Import Custom Insurance Carrier</h3>
+          <p class="text-xs text-slate-500">Add any regional, niche, or unlisted payer with immediate guideline mapping.</p>
+        </div>
+      </div>
+      <button onclick="closeAddPayerModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Modal Form -->
+    <div class="space-y-3.5 text-xs">
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">Insurance Carrier Name *</label>
+        <input type="text" id="modalPayerName" placeholder="e.g. Prime Healthcare Plan, Scan Health Plan, Quartz Health" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 font-medium focus:bg-white focus:ring-2 focus:ring-blue-500">
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Policy / Bulletin #</label>
+          <input type="text" id="modalPayerPolicy" placeholder="e.g. CPB-2026-09 or Medical Policy 4.01" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 font-medium focus:bg-white focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Carrier Sector / Category</label>
+          <select id="modalPayerGroup" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 font-medium">
+            <option value="Medicare Advantage Plans">Medicare Advantage Plan</option>
+            <option value="State Medicaid & MCOs">Medicaid MCO</option>
+            <option value="National Commercial">Commercial Health Plan</option>
+            <option value="Blue Cross Blue Shield Plans">Blue Cross Blue Shield Affiliate</option>
+            <option value="Workers' Compensation & State Funds">Workers' Compensation</option>
+            <option value="Universal Decision Support & TPAs" selected>Universal Decision Support / TPA</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Quick Template Importer -->
+      <div>
+        <label class="block font-bold text-slate-700 mb-1">Quick-Preset Rule Basis:</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="applyModalPreset('medicare')" class="p-2 text-[11px] bg-slate-100 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 border border-slate-200 rounded-lg text-left font-medium transition">
+            📋 Medicare LCD Standard (3 mo PT)
+          </button>
+          <button type="button" onclick="applyModalPreset('interqual')" class="p-2 text-[11px] bg-slate-100 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 border border-slate-200 rounded-lg text-left font-medium transition">
+            ⚡ InterQual Criteria (6-12 wk PT)
+          </button>
+          <button type="button" onclick="applyModalPreset('commercial')" class="p-2 text-[11px] bg-slate-100 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 border border-slate-200 rounded-lg text-left font-medium transition">
+            🏥 Commercial (12 wk PT for Fusion)
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Conservative Care Requirement</label>
+          <input type="text" id="modalPayerConservative" value="6-12 weeks documented non-operative care" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 text-xs">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Prior Auth Phone / Portal URL</label>
+          <input type="text" id="modalPayerPhone" placeholder="1-800-XXX-XXXX or https://..." class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 text-xs">
+        </div>
+      </div>
+
+      <!-- Quick Paste Policy / Denial Text Area -->
+      <div>
+        <label class="block font-bold text-slate-700 mb-1 flex items-center justify-between">
+          <span>Paste Policy Text or Denial Reason (Optional):</span>
+          <span class="text-[10px] text-blue-600 font-semibold cursor-pointer hover:underline" onclick="parsePayerNotes()">Auto-Extract Guidelines</span>
+        </label>
+        <textarea id="modalPayerNotes" rows="3" placeholder="Paste snippet from payer policy bulletin, LCD reference, or denial notice..." class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 text-xs font-mono"></textarea>
+      </div>
+
+    </div>
+
+    <!-- Modal Actions -->
+    <div class="mt-5 pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+      <button onclick="closeAddPayerModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition">
+        Cancel
+      </button>
+      <button onclick="saveCustomPayer()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-1.5">
+        <i data-lucide="check" class="w-4 h-4"></i>
+        <span>Save & Activate Carrier</span>
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- HIDDEN PRINT CONTAINER FOR CLEAN PDF EXPORT -->
 <div id="printLetterArea" class="hidden p-8 font-serif text-slate-900 text-sm leading-relaxed max-w-4xl mx-auto">
@@ -1028,6 +1143,49 @@ const INSURERS = {
     priorAuthPhone: '1-877-644-4613',
     guidelineSource: 'Evolent Clinical Guidelines CG-1766/CG-1759; WA HCA Standards',
   },
+  wa_wellpoint: {
+    name: 'Apple Health — Wellpoint Washington (formerly Amerigroup)',
+    group: 'State Medicaid & MCOs',
+    policyNumber: 'Wellpoint WA / CG-SURG-71 / WA HCA Contract',
+    medicalNecessityDef: 'Medically necessary services per WA Apple Health (Medicaid) standards and WA HCA guidelines. Wellpoint (formerly Amerigroup, an Elevance Health company) utilizes MCG criteria and Anthem/Elevance clinical guidelines for surgical review.',
+    conservativeDuration: '6 weeks for decompression; 12 weeks for fusion',
+    ptRequired: 'PT minimum 6 weeks for decompression; PT 12 weeks for fusion; NSAID/analgesic trial; epidural steroid injections where indicated',
+    imagingRequired: 'MRI of affected spine. CT if MRI contraindicated. Flexion/extension dynamic X-rays for fusion.',
+    functionalScores: 'Validated functional outcome metrics (ODI/NDI, VAS)',
+    waivers: 'Progressive neurological motor deficit, acute cauda equina syndrome, cervical myelopathy',
+    portalUrl: 'https://provider.wellpoint.com/washington-provider',
+    priorAuthPhone: '1-800-454-3730',
+    guidelineSource: 'WA HCA Apple Health Standards; MCG Criteria; Elevance/Anthem CG-SURG-71',
+  },
+  custom_ma: {
+    name: 'Custom / Unlisted Medicare Advantage Plan',
+    group: 'Medicare Advantage Plans',
+    policyNumber: '42 CFR § 422.101 Statutory Floor & CMS LCD Baseline',
+    medicalNecessityDef: 'Medicare Advantage organizations must comply with national coverage determinations (NCDs), local coverage determinations (LCDs), and general coverage requirements of Original Medicare under 42 CFR § 422.101. An MA plan cannot deny coverage for services that would be covered under Traditional Medicare.',
+    conservativeDuration: '3+ months per Medicare LCD baseline',
+    ptRequired: 'Supervised physical therapy and multimodal medical management',
+    imagingRequired: 'MRI or CT demonstrating severe neural compromise correlating with symptoms',
+    functionalScores: 'Documented functional impairment in daily activities (ODI/VAS)',
+    waivers: 'Progressive motor deficit, acute cauda equina syndrome, progressive myelopathy',
+    portalUrl: 'https://www.cms.gov/medicare/health-plans/medicareadvtgspecratestats',
+    priorAuthPhone: 'Refer to patient insurance card',
+    guidelineSource: '42 CFR § 422.101 (CMS MA Parity Standard); Regional Medicare MAC LCD',
+  },
+  custom_imported: {
+    name: 'Custom / Imported Insurance Carrier',
+    group: 'Universal Decision Support & TPAs',
+    policyNumber: 'Custom Payer Policy / Evidence-Based Standard',
+    medicalNecessityDef: 'Services clinically appropriate, medically necessary, and consistent with accepted standards of surgical practice and evidence-based clinical decision support.',
+    conservativeDuration: '6-12 weeks non-operative management',
+    ptRequired: 'Documented physical therapy and medical management',
+    imagingRequired: 'Diagnostic imaging (MRI/CT) confirming concordant surgical pathology',
+    functionalScores: 'Validated pain and functional disability scoring',
+    waivers: 'Cauda equina syndrome, progressive motor deficit, acute myelopathy',
+    portalUrl: '#',
+    priorAuthPhone: 'Refer to payer card',
+    guidelineSource: 'Custom Payer Criteria / InterQual / MCG Reference',
+  },
+
   medical_ca: {
     name: 'Medi-Cal (California Department of Health Care Services)',
     group: 'State Medicaid & MCOs',
@@ -1309,6 +1467,13 @@ function handlePayerChange() {
   const payer = INSURERS[selectedKey] || INSURERS.aetna;
   
   document.getElementById('selectedPayerPolicyNumber').textContent = payer.policyNumber.split('(')[0].trim();
+  
+  const customContainer = document.getElementById('customPayerInputContainer');
+  if (selectedKey === 'custom_ma') {
+    customContainer.classList.remove('hidden');
+  } else {
+    customContainer.classList.add('hidden');
+  }
   
   // Render Policy Summary Card in Gap Matrix
   const card = document.getElementById('payerPolicyCard');
@@ -1888,6 +2053,130 @@ function showToast(message, type = 'info') {
     toast.style.transition = 'all 0.3s ease';
     setTimeout(() => toast.remove(), 300);
   }, 3500);
+}
+
+
+// CUSTOM PAYER & LOCALSTORAGE PERSISTENCE
+function loadCustomPayersFromStorage() {
+  try {
+    const saved = localStorage.getItem('preauth_custom_payers');
+    if (saved) {
+      const customPayers = JSON.parse(saved);
+      for (const [key, val] of Object.entries(customPayers)) {
+        INSURERS[key] = val;
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load custom payers from localStorage', e);
+  }
+}
+
+function openAddPayerModal() {
+  document.getElementById('addPayerModal').classList.remove('hidden');
+  lucide.createIcons();
+}
+
+function closeAddPayerModal() {
+  document.getElementById('addPayerModal').classList.add('hidden');
+}
+
+function applyModalPreset(preset) {
+  if (preset === 'medicare') {
+    document.getElementById('modalPayerPolicy').value = '42 CFR § 422.101 / CMS LCD Baseline';
+    document.getElementById('modalPayerConservative').value = '3+ months conservative care per Medicare LCD';
+    document.getElementById('modalPayerGroup').value = 'Medicare Advantage Plans';
+  } else if (preset === 'interqual') {
+    document.getElementById('modalPayerPolicy').value = 'InterQual Musculoskeletal Criteria';
+    document.getElementById('modalPayerConservative').value = '6-12 weeks documented non-operative care';
+    document.getElementById('modalPayerGroup').value = 'Universal Decision Support & TPAs';
+  } else if (preset === 'commercial') {
+    document.getElementById('modalPayerPolicy').value = 'Commercial Musculoskeletal Policy';
+    document.getElementById('modalPayerConservative').value = '12 weeks for fusion; 6 weeks for decompression';
+    document.getElementById('modalPayerGroup').value = 'National Commercial';
+  }
+  showToast('Applied preset criteria template', 'info');
+}
+
+function parsePayerNotes() {
+  const text = document.getElementById('modalPayerNotes').value;
+  if (!text.trim()) {
+    showToast('Please paste policy text first', 'error');
+    return;
+  }
+  
+  if (/12\s*weeks?|3\s*months?/i.test(text)) {
+    document.getElementById('modalPayerConservative').value = '12 weeks conservative therapy / physical therapy';
+  } else if (/6\s*weeks?/i.test(text)) {
+    document.getElementById('modalPayerConservative').value = '6 weeks conservative care';
+  }
+  
+  const policyMatch = text.match(/(policy|cpb|lcd|ncd|bulletin)\s*[:#]?\s*([A-Za-z0-9_.-]+)/i);
+  if (policyMatch) {
+    document.getElementById('modalPayerPolicy').value = policyMatch[0];
+  }
+  
+  showToast('Extracted guidelines from pasted text', 'success');
+}
+
+function saveCustomPayer() {
+  const name = document.getElementById('modalPayerName').value.trim();
+  if (!name) {
+    showToast('Please enter an insurance carrier name', 'error');
+    return;
+  }
+
+  const policy = document.getElementById('modalPayerPolicy').value.trim() || 'Custom Clinical Policy';
+  const group = document.getElementById('modalPayerGroup').value;
+  const conservative = document.getElementById('modalPayerConservative').value.trim() || '6-12 weeks conservative care';
+  const phone = document.getElementById('modalPayerPhone').value.trim() || 'Refer to payer card';
+  const notes = document.getElementById('modalPayerNotes').value.trim();
+
+  const customKey = 'custom_' + name.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now();
+
+  const newPayer = {
+    name: name,
+    group: group,
+    policyNumber: policy,
+    medicalNecessityDef: notes || `Medically necessary when clinical symptoms correlate with diagnostic imaging and conservative care has failed under ${name} policy criteria.`,
+    conservativeDuration: conservative,
+    ptRequired: `Documented physical therapy and multimodal medical care (${conservative})`,
+    imagingRequired: 'MRI or CT confirming neural compression or spinal instability',
+    functionalScores: 'Validated functional outcome metrics (ODI/NDI, VAS)',
+    waivers: 'Progressive motor deficit, acute cauda equina syndrome, cervical myelopathy',
+    portalUrl: phone.startsWith('http') ? phone : '#',
+    priorAuthPhone: phone,
+    guidelineSource: `${name} ${policy}`,
+  };
+
+  INSURERS[customKey] = newPayer;
+
+  // Persist to localStorage
+  try {
+    let saved = {};
+    const existing = localStorage.getItem('preauth_custom_payers');
+    if (existing) saved = JSON.parse(existing);
+    saved[customKey] = newPayer;
+    localStorage.setItem('preauth_custom_payers', JSON.stringify(saved));
+  } catch (e) {
+    console.error(e);
+  }
+
+  closeAddPayerModal();
+  loadCustomPayersFromStorage();
+  populatePayerDropdown();
+  document.getElementById('payerSelect').value = customKey;
+  handlePayerChange();
+  showToast(`Successfully imported and activated ${name}!`, 'success');
+}
+
+function handleCustomPlanNameChange() {
+  const customName = document.getElementById('customPlanNameInput').value.trim();
+  const selectedKey = document.getElementById('payerSelect').value;
+  if (selectedKey === 'custom_ma') {
+    INSURERS.custom_ma.name = customName ? `${customName} (Medicare Advantage)` : 'Custom / Unlisted Medicare Advantage Plan';
+    document.getElementById('selectedPayerPolicyNumber').textContent = '42 CFR § 422.101 (Parity Floor)';
+    runGapAnalysis();
+  }
 }
 
 // INITIALIZE ON LOAD
