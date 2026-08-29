@@ -1485,45 +1485,45 @@ function runGapAnalysis() {
     return;
   }
 
-  const lowerNote = note.toLowerCase();
+  // Criteria Detection Regexes with Negation Protection
+  const isNegatedPT = /no\s*(pt|physical\s*therapy)|denies\s*(pt|physical\s*therapy)|has\s*not\s*(had|attempted|completed)\s*pt|0\s*weeks|not\s*attempted/i.test(note);
+  const hasPT12 = !isNegatedPT && /(1[2-9]|[2-9][0-9])\s*(weeks?|wks?)|[3-9]\s*months?/i.test(note) && /(physical\s*therapy|\bpt\b|physiotherapy|rehab|conservative)/i.test(note);
+  const hasPT6 = !isNegatedPT && /([6-9]|1[0-9])\s*(weeks?|wks?)/i.test(note) && /(physical\s*therapy|\bpt\b|physiotherapy|rehab|conservative)/i.test(note);
+  const hasInjections = /epidural|steroid\s*injection|\besi\b|facet\s*block|nerve\s*block|selective\s*nerve|injection/i.test(note);
+  const hasMedications = /nsaid|meloxicam|gabapentin|ibuprofen|naproxen|cyclobenzaprine|tramadol|analgesic|pharmacotherapy|medication/i.test(note);
   
-  // Criteria Detection Rules
-  const hasPT12 = /1[2-9]\s*weeks?|1[2-9]\s*wks?|[3-9]\s*months?|14\s*weeks|16\s*weeks/i.test(note) && /physical\s*therapy|\bpt\b|physiotherapy|rehab/i.test(note);
-  const hasPT6 = /([6-9]|1[0-9])\s*weeks?|physical\s*therapy|\bpt\b|physiotherapy/i.test(note);
-  const hasInjections = /epidural|steroid\s*injection|\besi\b|facet\s*block|nerve\s*block|selective\s*nerve/i.test(note);
-  const hasMedications = /nsaid|meloxicam|gabapentin|ibuprofen|naproxen|cyclobenzaprine|tramadol|analgesic|pharmacotherapy/i.test(note);
-  
-  const hasMRI = /\bmri\b|magnetic\s*resonance|stenosis|disc\s*herniation|foraminal|extrusion|subarticular|radiculopathy/i.test(note);
+  const hasMRI = /\bmri\b|magnetic\s*resonance|\bct\b|computed\s*tomography|stenosis|disc\s*herniation|extrusion|protrusion|foraminal|subarticular|radiculopathy|cord\s*compression|myelomalacia|spondylosis|spondylolisthesis/i.test(note);
   const hasInstability = /instability|spondylolisthesis|translation|flexion[\s\/-]*extension|dynamic\s*radiograph|\b\d+(\.\d+)?\s*mm\b/i.test(note);
   
   const hasODI = /\bodi\b|oswestry|neck\s*disability|\bndi\b|\d{1,2}\s*%/i.test(note);
-  const hasVAS = /\bvas\b|visual\s*analog|\d{1,2}\s*\/\s*10/i.test(note);
+  const hasVAS = /\bvas\b|visual\s*analog|\d{1,2}\s*\/\s*10|pain\s*scale/i.test(note);
   
-  const hasWaiverEmergency = /progressive\s*motor|cauda\s*equina|myelopathy|grade\s*[1-3]\/5|foot\s*drop|motor\s*deficit|cord\s*compression/i.test(note);
+  const hasWaiverEmergency = /progressive\s*motor|cauda\s*equina|myelopathy|grade\s*[1-3]\/5|foot\s*drop|motor\s*deficit|cord\s*compression|acute\s*fracture/i.test(note);
 
   // Criteria Matrix Evaluation
   const items = [];
   let score = 0;
-  let totalWeight = 0;
+  let totalWeight = 100;
 
   // 1. Conservative PT & Duration
-  totalWeight += 25;
-  if (hasPT12) {
-    score += 25;
+  if (hasWaiverEmergency) {
+    score += 35;
+    items.push({ label: 'Conservative Care Duration', status: 'pass', desc: 'Policy Waiver Active: Acute neurological deficit / cord compression waives non-operative waiting period.' });
+  } else if (hasPT12) {
+    score += 35;
     items.push({ label: 'Conservative Care Duration', status: 'pass', desc: 'Met: >= 12 weeks structured Physical Therapy & multimodal care documented.' });
   } else if (hasPT6) {
-    score += 15;
-    items.push({ label: 'Conservative Care Duration', status: 'pass', desc: 'Met for decompression (6+ wks), partial for fusion (requires 12 wks per policy).' });
-  } else if (hasWaiverEmergency) {
     score += 25;
-    items.push({ label: 'Conservative Care Duration', status: 'pass', desc: 'Policy Waiver Triggered: Progressive motor weakness/myelopathy waives PT duration.' });
+    items.push({ label: 'Conservative Care Duration', status: 'pass', desc: 'Met for decompression (6+ wks), partial for fusion (requires 12 wks per policy).' });
   } else {
     items.push({ label: 'Conservative Care Duration', status: 'gap', desc: 'Gap Identified: Missing explicit 6-12 week physical therapy timeline.' });
   }
 
   // 2. Medication & Injection Trials
-  totalWeight += 15;
-  if (hasInjections && hasMedications) {
+  if (hasWaiverEmergency) {
+    score += 15;
+    items.push({ label: 'Adjunctive Conservative Care', status: 'pass', desc: 'Waived: Interventional delays contraindicated due to neurological compromise.' });
+  } else if (hasInjections && hasMedications) {
     score += 15;
     items.push({ label: 'Adjunctive Conservative Care', status: 'pass', desc: 'Met: Both pharmacological management and spinal injection trials documented.' });
   } else if (hasMedications || hasInjections) {
@@ -1534,39 +1534,34 @@ function runGapAnalysis() {
   }
 
   // 3. Neuro-imaging Concordance
-  totalWeight += 30;
-  if (hasMRI && hasInstability) {
+  if (hasMRI && (hasInstability || hasWaiverEmergency || /decompression|discectomy|acdf/i.test(procedure))) {
     score += 30;
-    items.push({ label: 'Diagnostic Imaging Concordance', status: 'pass', desc: 'Met: MRI neural compression and dynamic flexion/extension instability confirmed.' });
+    items.push({ label: 'Diagnostic Imaging Concordance', status: 'pass', desc: 'Met: Objective neural compression / structural instability confirmed on imaging.' });
   } else if (hasMRI) {
     score += 20;
-    items.push({ label: 'Diagnostic Imaging Concordance', status: 'pass', desc: 'Met: Advanced MRI cross-sectional neural compression documented.' });
+    items.push({ label: 'Diagnostic Imaging Concordance', status: 'pass', desc: 'Met: Advanced cross-sectional neural compression documented.' });
   } else {
     items.push({ label: 'Diagnostic Imaging Concordance', status: 'alert', desc: 'Critical Gap: Insufficient cross-sectional imaging (MRI/CT) findings.' });
   }
 
   // 4. Validated Functional Outcome Measures (ODI / VAS)
-  totalWeight += 20;
   if (hasODI && hasVAS) {
     score += 20;
     items.push({ label: 'Validated Functional Metrics', status: 'pass', desc: 'Met: Both Oswestry (ODI) and Visual Analog Scale (VAS) quantified.' });
-  } else if (hasODI || hasVAS) {
+  } else if (hasWaiverEmergency) {
+    score += 20;
+    items.push({ label: 'Validated Functional Metrics', status: 'pass', desc: 'Met: Acute progressive neurological motor weakness / myelopathy establishes severe functional deficit.' });
+  } else if (hasODI) {
     score += 15;
-    items.push({ label: 'Validated Functional Metrics', status: 'pass', desc: 'Partially Met: ODI or VAS pain score present.' });
+    items.push({ label: 'Validated Functional Metrics', status: 'pass', desc: 'Met: Validated ODI/NDI outcome score present.' });
+  } else if (hasVAS) {
+    score += 10;
+    items.push({ label: 'Validated Functional Metrics', status: 'gap', desc: 'Partially Met: VAS recorded, but ODI/NDI score is missing.' });
   } else {
     items.push({ label: 'Validated Functional Metrics', status: 'gap', desc: 'Gap: Include ODI score (>= 40%) and VAS (>= 6/10) for maximum approval probability.' });
   }
 
-  // 5. Emergency / Acute Policy Waiver
-  totalWeight += 10;
-  if (hasWaiverEmergency) {
-    score += 10;
-    items.push({ label: 'Urgent Policy Exemption / Waiver', status: 'pass', desc: 'Active: Acute cauda equina / progressive neurological deficit override invoked.' });
-  } else {
-    items.push({ label: 'Urgent Policy Exemption / Waiver', status: 'neutral', desc: 'Elective / Standard review pathway (no emergency waiver invoked).' });
-  }
-
-  const finalPercentage = Math.round((score / totalWeight) * 100);
+  const finalPercentage = Math.min(100, Math.round((score / totalWeight) * 100));
   document.getElementById('detectedKeywordsCount').textContent = `${items.filter(i => i.status === 'pass').length} of ${items.length} criteria met`;
 
   // Update Badge
@@ -1614,8 +1609,6 @@ function runGapAnalysis() {
   // Synthesize Prompt
   synthesizePrompt(note, payer, procedure, intent, items, finalPercentage);
 }
-
-// PROMPT SYNTHESIS ENGINE
 function synthesizePrompt(note, payer, procedure, intent, items, compliance) {
   let intentHeading = 'LETTER OF MEDICAL NECESSITY / PRIOR AUTHORIZATION REQUEST';
   if (intent === 'level1_appeal') intentHeading = 'FORMAL LEVEL 1 DENIAL APPEAL & MEDICAL NECESSITY BRIEF';
