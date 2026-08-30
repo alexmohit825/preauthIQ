@@ -147,27 +147,26 @@ body { font-family: 'Inter', sans-serif; background-color: #f8f4f1; color: #1e29
 
   <!-- TOP CASE CONFIGURATION BAR -->
   <section class="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4 mb-5">
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-end">
 
       <!-- CARRIER CATEGORY FILTER TABS -->
-      <div class="md:col-span-12 flex flex-wrap items-center gap-1.5 pb-2 border-b border-slate-100 text-xs">
+      <div class="md:col-span-12 flex flex-wrap items-center gap-1.5 pb-2.5 border-b border-slate-100 text-xs">
         <span class="font-bold text-slate-500 text-[11px] uppercase mr-1">Quick Sector:</span>
-        <button type="button" onclick="filterPayerSector('all')" class="sector-tab-btn active px-2.5 py-1 rounded-lg font-semibold bg-blue-600 text-white shadow-sm transition" data-sector="all">All Carriers (75+)</button>
+        <button type="button" onclick="filterPayerSector('all')" class="sector-tab-btn active px-2.5 py-1 rounded-lg font-semibold bg-blue-600 text-white shadow-sm transition" data-sector="all">All Carriers (100+)</button>
         <button type="button" onclick="filterPayerSector('pnw')" class="sector-tab-btn px-2.5 py-1 rounded-lg font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition" data-sector="pnw">🌲 Washington & Oregon (PNW)</button>
         <button type="button" onclick="filterPayerSector('engines')" class="sector-tab-btn px-2.5 py-1 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" data-sector="engines">⚡ Carelon / InterQual / MCG</button>
         <button type="button" onclick="filterPayerSector('commercial')" class="sector-tab-btn px-2.5 py-1 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" data-sector="commercial">🏥 Commercial & Blues</button>
-        <button type="button" onclick="filterPayerSector('medicare')" class="sector-tab-btn px-2.5 py-1 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" data-sector="medicare">🏛️ Medicare & MA</button>
+        <button type="button" onclick="filterPayerSector('medicare')" class="sector-tab-btn px-2.5 py-1 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" data-sector="medicare">🏛️ Medicare & MA (34 Plans)</button>
         <button type="button" onclick="filterPayerSector('medicaid')" class="sector-tab-btn px-2.5 py-1 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" data-sector="medicaid">🛡️ Medicaid MCOs (Wellpoint/WA)</button>
         <button type="button" onclick="filterPayerSector('workers_comp')" class="sector-tab-btn px-2.5 py-1 rounded-lg font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition" data-sector="workers_comp">💼 Workers' Comp & L&I</button>
       </div>
 
-      
-      <!-- Payer Selector (Searchable) -->
-      <div class="md:col-span-5">
-        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center justify-between">
+      <!-- ROW 1 (LEFT): PRIMARY INSURANCE (Searchable 100+ Carriers) -->
+      <div class="md:col-span-6">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center justify-between">
           <span class="flex items-center gap-1.5">
-            <i data-lucide="building-2" class="w-3.5 h-3.5 text-blue-600"></i>
-            Target Insurance Carrier (60 Payers)
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-blue-600"></i>
+            Primary Target Insurance Carrier (100 Carriers)
           </span>
           <span id="selectedPayerPolicyNumber" class="text-blue-700 font-mono text-[11px] font-semibold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">Aetna CPB 0743</span>
         </label>
@@ -181,8 +180,32 @@ body { font-family: 'Inter', sans-serif; background-color: #f8f4f1; color: #1e29
         </div>
       </div>
 
-      <!-- Procedure Category Preset -->
-      <div class="md:col-span-4">
+      <!-- ROW 1 (RIGHT): SECONDARY / SUPPLEMENTAL INSURANCE BOX (Situated Right Next to Primary) -->
+      <div class="md:col-span-6">
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center justify-between">
+          <span class="flex items-center gap-1.5">
+            <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-600"></i>
+            Secondary / Supplemental Insurance (Medigap / Dual Eligible / COB)
+          </span>
+          <span id="secondaryStatusBadge" class="text-slate-500 font-mono text-[11px] bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-semibold">Optional</span>
+        </label>
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+          <div class="sm:col-span-7 relative">
+            <select id="secondaryPayerSelect" onchange="handleSecondaryPayerChange()" class="w-full bg-slate-50 hover:bg-slate-100/80 focus:bg-white text-slate-800 text-xs font-semibold rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 py-2.5 px-3 appearance-none transition pr-8 cursor-pointer">
+              <!-- Dynamically populated secondary payers -->
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+              <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+            </div>
+          </div>
+          <div class="sm:col-span-5">
+            <input type="text" id="secondaryMemberIdInput" oninput="runGapAnalysis()" placeholder="Secondary Member / ID #" class="w-full bg-slate-50 hover:bg-slate-100/80 focus:bg-white text-slate-800 text-xs font-medium px-3 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          </div>
+        </div>
+      </div>
+
+      <!-- ROW 2 (LEFT): SURGICAL PROCEDURE PRESET -->
+      <div class="md:col-span-7">
         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1.5">
           <i data-lucide="activity" class="w-3.5 h-3.5 text-emerald-600"></i>
           Target Surgical Procedure
@@ -214,8 +237,8 @@ body { font-family: 'Inter', sans-serif; background-color: #f8f4f1; color: #1e29
         </div>
       </div>
 
-      <!-- Letter Intent / Stage -->
-      <div class="md:col-span-3">
+      <!-- ROW 2 (RIGHT): REVIEW STAGE / INTENT -->
+      <div class="md:col-span-5">
         <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1.5">
           <i data-lucide="send" class="w-3.5 h-3.5 text-indigo-600"></i>
           Review Stage / Intent
@@ -233,7 +256,6 @@ body { font-family: 'Inter', sans-serif; background-color: #f8f4f1; color: #1e29
         </div>
       </div>
 
-    
       <!-- Dynamic Custom Payer / Unlisted MA Input Field -->
       <div id="customPayerInputContainer" class="hidden md:col-span-12 bg-blue-50/80 border border-blue-200 rounded-xl p-3 mt-1">
         <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
@@ -248,42 +270,9 @@ body { font-family: 'Inter', sans-serif; background-color: #f8f4f1; color: #1e29
           </div>
         </div>
       </div>
+
     </div>
   </section>
-
-  
-      <!-- SECONDARY / SUPPLEMENTAL INSURANCE CONFIGURATION BOX -->
-      <div class="md:col-span-12 bg-slate-50 border border-slate-200/90 rounded-xl p-3 mt-1">
-        <div class="flex items-center justify-between mb-2">
-          <label class="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" id="hasSecondaryInsuranceToggle" onchange="toggleSecondaryInsurance()" class="rounded text-blue-600 focus:ring-0 w-4 h-4">
-            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-600"></i>
-              Secondary / Supplemental Insurance (COB / Medigap / Dual Eligible)
-            </span>
-          </label>
-          <span class="text-[11px] text-slate-500 font-medium hidden sm:inline">Coordination of Benefits & Dual Pre-Authorization Clearance</span>
-        </div>
-
-        <div id="secondaryInsuranceFields" class="hidden grid grid-cols-1 md:grid-cols-12 gap-3 pt-2 border-t border-slate-200/60">
-          <div class="md:col-span-6">
-            <label class="block text-[11px] font-bold text-slate-700 mb-1">Secondary Insurance Carrier / Plan Name:</label>
-            <div class="relative">
-              <select id="secondaryPayerSelect" onchange="handleSecondaryPayerChange()" class="w-full bg-white text-slate-800 text-xs font-semibold rounded-lg border border-slate-300 py-2 px-3 focus:ring-2 focus:ring-blue-500 pr-8">
-                <!-- Dynamically populated secondary payers -->
-              </select>
-              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-500">
-                <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
-              </div>
-            </div>
-          </div>
-
-          <div class="md:col-span-6">
-            <label class="block text-[11px] font-bold text-slate-700 mb-1">Secondary Policy / Member ID / Plan Type:</label>
-            <input type="text" id="secondaryMemberIdInput" oninput="runGapAnalysis()" placeholder="e.g. Medigap Plan G #982341, AARP Supplement, Tricare For Life, WA Apple Health Secondary..." class="w-full bg-white text-slate-800 text-xs px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          </div>
-        </div>
-      </div>
 
   <!-- WORKBENCH 2-COLUMN SPLIT GRID -->
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1">
@@ -2439,18 +2428,16 @@ function runGapAnalysis() {
 }
 
 function getSecondaryPayerPromptInfo() {
-  const hasSecondary = document.getElementById('hasSecondaryInsuranceToggle') && document.getElementById('hasSecondaryInsuranceToggle').checked;
-  if (!hasSecondary) return '';
   const secSelect = document.getElementById('secondaryPayerSelect');
+  if (!secSelect || secSelect.value === 'none') return '';
   const secName = secSelect.options[secSelect.selectedIndex] ? secSelect.options[secSelect.selectedIndex].text : 'Secondary Plan';
   const secId = document.getElementById('secondaryMemberIdInput').value.trim() || 'On File';
   return `\n- **Secondary / Supplemental Payer:** ${secName}\n- **Secondary Policy / Member ID:** ${secId}\n- **Coordination of Benefits:** Include secondary payer notification block to support dual pre-authorization and Medigap crossover adjudication.`;
 }
 
 function getSecondaryLetterBlock(payer) {
-  const hasSecondary = document.getElementById('hasSecondaryInsuranceToggle') && document.getElementById('hasSecondaryInsuranceToggle').checked;
-  if (!hasSecondary) return '';
   const secSelect = document.getElementById('secondaryPayerSelect');
+  if (!secSelect || secSelect.value === 'none') return '';
   const secName = secSelect.options[secSelect.selectedIndex] ? secSelect.options[secSelect.selectedIndex].text : 'Secondary Plan';
   const secId = document.getElementById('secondaryMemberIdInput').value.trim() || 'On File';
   return `\nSECONDARY INSURANCE / SUPPLEMENTAL COVERAGE (COB):\nSECONDARY PAYER: ${secName}\nSECONDARY MEMBER / POLICY ID: ${secId}\nCOORDINATION OF BENEFITS: Requesting dual medical necessity clearance and pre-authorization crossover to facilitate seamless claim adjudication.\n`;
@@ -2900,6 +2887,7 @@ function saveCustomPayer() {
   closeAddPayerModal();
   loadCustomPayersFromStorage();
   populatePayerDropdown();
+  populateSecondaryPayerDropdown();
   document.getElementById('payerSelect').value = customKey;
   handlePayerChange();
   showToast(`Successfully imported and activated ${name}!`, 'success');
@@ -3243,11 +3231,11 @@ function toggleSecondaryInsurance() {
 
 function populateSecondaryPayerDropdown() {
   const select = document.getElementById('secondaryPayerSelect');
-  if (select.options.length > 0) return; // already populated
-
+  if (!select) return;
   select.innerHTML = `
+    <option value="none" selected>-- None (Primary Insurance Only) --</option>
     <optgroup label="Standard Medigap / Supplemental Plans">
-      <option value="medigap_plan_g" selected>Medicare Supplement (Medigap Plan G / F / N)</option>
+      <option value="medigap_plan_g">Medicare Supplement (Medigap Plan G / F / N)</option>
       <option value="aarp_medigap">AARP / UnitedHealthcare Medicare Supplement</option>
       <option value="mutual_of_omaha">Mutual of Omaha Medicare Supplement</option>
       <option value="bcbs_medigap">Blue Cross Blue Shield Medigap / Blue MedicareRx</option>
@@ -3257,7 +3245,7 @@ function populateSecondaryPayerDropdown() {
     </optgroup>
   `;
 
-  // Append all standard carriers as secondary options
+  // Append all 100 standard carriers as secondary options
   const groups = {};
   for (const [key, val] of Object.entries(INSURERS)) {
     if (!groups[val.group]) groups[val.group] = [];
@@ -3278,8 +3266,18 @@ function populateSecondaryPayerDropdown() {
 }
 
 function handleSecondaryPayerChange() {
+  const select = document.getElementById('secondaryPayerSelect');
+  const badge = document.getElementById('secondaryStatusBadge');
+  if (select.value !== 'none') {
+    badge.className = 'text-indigo-700 font-mono text-[11px] bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 font-semibold';
+    badge.textContent = 'Active (COB)';
+  } else {
+    badge.className = 'text-slate-500 font-mono text-[11px] bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-semibold';
+    badge.textContent = 'Optional';
+  }
   runGapAnalysis();
 }
+
 
 // INITIALIZE ON LOAD
 window.addEventListener('DOMContentLoaded', () => {
