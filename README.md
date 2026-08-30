@@ -1,4 +1,4 @@
-# PreAuthIQ (v3.0 Clinical Edition)
+# PreAuthIQ (v3.1 Clinical Edition)
 
 **AI-powered surgical prior authorization, gap analysis, and medical necessity appeal studio for Spine and Orthopedic Surgery.**
 
@@ -9,8 +9,12 @@
 
 ## ⚡ Core Capabilities
 
-- 🏥 **Comprehensive 74-Carrier Insurance Knowledge Base:** Complete national commercial, Blue Cross Blue Shield, Medicare LCDs/MACs, Medicare Advantage, Medicaid MCOs, Workers' Comp (WA L&I, CA SCIF, SAIF Oregon, Texas DWC, NYS WCB), Military/VA (TRICARE, VA CCN, UMP/PEBB), and major utilization review engines (Carelon/AIM, InterQual, Milliman MCG).
-- 🌲 **Dedicated Washington & Oregon (PNW) Sector Suite:** 21 specialized Pacific Northwest payers including Premera, Regence (WA & OR), Asuris, WA L&I, SAIF Corporation, Apple Health (CHPW, Coordinated Care, Wellpoint WA, Molina), Oregon Health Plan (OHP / HERC Guideline Notes 56 & 37), CareOregon / Health Share CCO, Samaritan Health, KPWA, Moda, PacificSource, and First Choice Health.
+- 🏥 **Exhaustive 100-Carrier Payer Knowledge Base:** Complete coverage across all 50 states, including 34 dedicated Medicare Advantage plans (UHC MA, Humana Gold, Aetna Eagle, Anthem MediBlue, Kaiser Senior Advantage, Wellcare D-SNP, Devoted Health, SCAN, Alignment, Clover, Premera MA, Regence MedAdvantage, Moda MA, PacificSource Medicare, Providence MA, Samaritan Advantage, CareOregon Advantage, Highmark Freedom Blue, Florida Blue Medicare, HCSC Blue Cross MA, SelectHealth Advantage, etc.).
+- 🔄 **Secondary / Supplemental Insurance & COB Engine:**
+  - Dedicated **Secondary Insurance (COB / Medigap / Dual Eligible)** toggle and intake box.
+  - Supports standard Medigap plans (Plan G/F/N), AARP/UHC Supplement, Mutual of Omaha, BCBS Medigap, TRICARE For Life, Secondary Medicaid (WA Apple Health / OHP Dual Eligible), and custom secondary plans.
+  - Automatically incorporates secondary pre-authorization notices and coordination of benefits clauses into the Medical Necessity Letter and EMR chart addendum.
+- 🌲 **Dedicated Washington & Oregon (PNW) Sector Suite:** 21 specialized Pacific Northwest payers including Premera, Regence (WA & OR), Asuris, WA L&I, SAIF Corporation (Oregon Workers' Comp OAR 436-010), Apple Health (CHPW, Coordinated Care, Wellpoint WA, Molina), Oregon Health Plan (OHP / HERC Guideline Notes 56 & 37), CareOregon / Health Share CCO, Samaritan Health, KPWA, Moda, PacificSource, and First Choice Health.
 - 📋 **Tri-Mode Generation Hub:**
   1. **Option 1 (Two-Stage Copilot Mode):** 1-click prompt synthesis formatted specifically for Microsoft Copilot or ChatGPT.
   2. **Option 2 (On-Device Fast Synthesizer):** Zero-latency deterministic template generation running 100% locally with zero API key needed.

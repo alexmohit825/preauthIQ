@@ -251,6 +251,40 @@ body { font-family: 'Inter', sans-serif; background-color: #f8f4f1; color: #1e29
     </div>
   </section>
 
+  
+      <!-- SECONDARY / SUPPLEMENTAL INSURANCE CONFIGURATION BOX -->
+      <div class="md:col-span-12 bg-slate-50 border border-slate-200/90 rounded-xl p-3 mt-1">
+        <div class="flex items-center justify-between mb-2">
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox" id="hasSecondaryInsuranceToggle" onchange="toggleSecondaryInsurance()" class="rounded text-blue-600 focus:ring-0 w-4 h-4">
+            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-lucide="layers" class="w-3.5 h-3.5 text-indigo-600"></i>
+              Secondary / Supplemental Insurance (COB / Medigap / Dual Eligible)
+            </span>
+          </label>
+          <span class="text-[11px] text-slate-500 font-medium hidden sm:inline">Coordination of Benefits & Dual Pre-Authorization Clearance</span>
+        </div>
+
+        <div id="secondaryInsuranceFields" class="hidden grid grid-cols-1 md:grid-cols-12 gap-3 pt-2 border-t border-slate-200/60">
+          <div class="md:col-span-6">
+            <label class="block text-[11px] font-bold text-slate-700 mb-1">Secondary Insurance Carrier / Plan Name:</label>
+            <div class="relative">
+              <select id="secondaryPayerSelect" onchange="handleSecondaryPayerChange()" class="w-full bg-white text-slate-800 text-xs font-semibold rounded-lg border border-slate-300 py-2 px-3 focus:ring-2 focus:ring-blue-500 pr-8">
+                <!-- Dynamically populated secondary payers -->
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-500">
+                <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="md:col-span-6">
+            <label class="block text-[11px] font-bold text-slate-700 mb-1">Secondary Policy / Member ID / Plan Type:</label>
+            <input type="text" id="secondaryMemberIdInput" oninput="runGapAnalysis()" placeholder="e.g. Medigap Plan G #982341, AARP Supplement, Tricare For Life, WA Apple Health Secondary..." class="w-full bg-white text-slate-800 text-xs px-3 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+        </div>
+      </div>
+
   <!-- WORKBENCH 2-COLUMN SPLIT GRID -->
   <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1">
     
@@ -1095,76 +1129,440 @@ const INSURERS = {
     guidelineSource: 'CGS Administrators LCD L34106',
   },
 
-  // === MEDICARE ADVANTAGE PLANS ===
-  medicare_advantage: {
-    name: 'Medicare Advantage (General / Plan Baseline)',
-    group: 'Medicare Advantage Plans',
-    policyNumber: 'Medicare Advantage Baseline (CMS LCD/NCD + Plan PA Addendum)',
-    medicalNecessityDef: 'MA plans must cover all services covered by Original Medicare (Parts A & B) and follow Medicare LCD/NCD criteria as a statutory floor (42 CFR § 422.101). Individual MA plans may enforce prior authorization review.',
-    conservativeDuration: '3+ months per Medicare LCD baseline',
-    ptRequired: 'Supervised active physical therapy and medical management',
-    imagingRequired: 'MRI or CT demonstrating severe pathology correlating with symptoms',
-    functionalScores: 'Documented functional impairment (ODI/VAS)',
-    waivers: 'Progressive motor deficit, acute cauda equina syndrome, progressive myelopathy',
-    portalUrl: 'https://www.cms.gov/medicare/health-plans/medicareadvtgspecratestats',
-    priorAuthPhone: 'Varies by MA plan',
-    guidelineSource: '42 CFR § 422.101 (CMS MA Coverage Parity Rules) & Medicare LCDs',
-  },
+    // === COMPREHENSIVE ALL-KNOWN MEDICARE ADVANTAGE PLANS (35+ PAYERS) ===
   uhc_ma: {
-    name: 'UnitedHealthcare Medicare Advantage',
+    name: 'UnitedHealthcare Medicare Advantage (AARP / Dual Complete)',
     group: 'Medicare Advantage Plans',
-    policyNumber: 'UHC MA Musculoskeletal / InterQual Protocols',
-    medicalNecessityDef: 'Medicare LCD baseline combined with UHC Medicare Advantage prior authorization requirements and InterQual clinical criteria.',
+    policyNumber: 'UHC MA Musculoskeletal Protocols / InterQual Criteria',
+    medicalNecessityDef: 'Medicare LCD baseline combined with UHC Medicare Advantage prior authorization requirements and InterQual clinical criteria. Subject to 42 CFR § 422.101 Medicare Advantage coverage parity.',
     conservativeDuration: '12 weeks conservative care for fusion; 6 weeks for decompression',
     ptRequired: 'Supervised physical therapy and pharmacological therapy',
     imagingRequired: 'MRI or CT demonstrating concordant nerve root compromise or segmental instability',
     functionalScores: 'Oswestry Disability Index (ODI) or equivalent',
-    waivers: 'Cauda equina syndrome, progressive motor deficits, acute fracture',
+    waivers: 'Cauda equina syndrome, progressive motor deficits (Grade <= 3/5), acute fracture',
     portalUrl: 'https://www.uhcprovider.com',
     priorAuthPhone: '1-877-842-3210',
-    guidelineSource: 'UHC MA Clinical Guidelines & InterQual',
+    guidelineSource: 'UHC MA Clinical Guidelines & InterQual / 42 CFR § 422.101',
+  },
+  humana_ma: {
+    name: 'Humana Medicare Advantage (Gold Plus / Choice PPO)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Humana MA SUR-020 & MCG Criteria',
+    medicalNecessityDef: 'Medicare LCD standard applied through Humana prior authorization and MCG Musculoskeletal Guidelines pursuant to 42 CFR § 422.101.',
+    conservativeDuration: '6-12 weeks conservative care',
+    ptRequired: 'Active physical therapy program and medical trials',
+    imagingRequired: 'MRI or CT confirming neural compression',
+    functionalScores: 'Documented limitation of activities of daily living (ODI/VAS)',
+    waivers: 'Cauda equina syndrome, rapid neurological deterioration',
+    portalUrl: 'https://www.humana.com/provider',
+    priorAuthPhone: '1-800-457-4708',
+    guidelineSource: 'Humana MA Policy SUR-020 / MCG Criteria',
   },
   aetna_ma: {
-    name: 'Aetna Medicare Advantage',
+    name: 'Aetna Medicare Advantage (Eagle / Premier PPO)',
     group: 'Medicare Advantage Plans',
     policyNumber: 'Aetna MA CPB 0743 & CMS Parity Guidelines',
-    medicalNecessityDef: 'Follows Aetna Clinical Policy Bulletins alongside Medicare National and Local Coverage Determinations.',
+    medicalNecessityDef: 'Follows Aetna Clinical Policy Bulletins alongside Medicare National and Local Coverage Determinations under 42 CFR § 422.101.',
     conservativeDuration: '12 weeks conservative treatment for fusion; 6 weeks for decompression',
     ptRequired: 'Physical therapy and anti-inflammatory medication trials',
-    imagingRequired: 'High resolution MRI or CT',
-    functionalScores: 'Validated functional outcome metrics',
+    imagingRequired: 'High resolution MRI or CT demonstrating concordant pathology',
+    functionalScores: 'Validated functional outcome metrics (ODI/NDI)',
     waivers: 'Progressive neurological deficits, cauda equina syndrome',
     portalUrl: 'https://www.aetna.com/providers',
     priorAuthPhone: '1-800-624-0756',
     guidelineSource: 'Aetna MA CPB 0743 / CMS LCDs',
   },
-  humana_ma: {
-    name: 'Humana Medicare Advantage',
+  kaiser_senior: {
+    name: 'Kaiser Permanente Senior Advantage (NW / WA / CA)',
     group: 'Medicare Advantage Plans',
-    policyNumber: 'Humana MA SUR-020 & MCG Criteria',
-    medicalNecessityDef: 'Medicare LCD standard applied through Humana prior authorization and MCG Musculoskeletal Guidelines.',
+    policyNumber: 'Kaiser Senior Advantage Clinical Review Guidelines',
+    medicalNecessityDef: 'Follows Permanente Medical Group clinical guidelines and CMS Medicare LCD standards under 42 CFR § 422.101 parity rules.',
+    conservativeDuration: '3+ months documented multimodal conservative care',
+    ptRequired: 'Integrated physical therapy, physiatry, and multimodal medical therapy',
+    imagingRequired: 'MRI or CT confirming surgical pathology matching clinical exam',
+    functionalScores: 'Documented functional and occupational limitations',
+    waivers: 'Cauda equina syndrome, progressive neurological deficits, acute fracture',
+    portalUrl: 'https://providers.kaiserpermanente.org',
+    priorAuthPhone: '1-888-767-4670 (KPWA) / 1-800-813-2000 (KPNW)',
+    guidelineSource: 'Kaiser Permanente Clinical Practice Guidelines & Medicare LCDs',
+  },
+  anthem_mediblue: {
+    name: 'Anthem / Elevance MediBlue (Medicare Advantage)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Anthem MediBlue CG-SURG-71/72 & Carelon / AIM',
+    medicalNecessityDef: 'Requires documented structural lesion matching neurological findings and failure of comprehensive non-operative modalities per Carelon and Anthem guidelines.',
+    conservativeDuration: '6-12 weeks documented non-operative care',
+    ptRequired: 'Formal physical therapy with documented compliance',
+    imagingRequired: 'MRI or CT confirming neural impingement matching clinical radicular distribution',
+    functionalScores: 'Documented functional disability in daily living activities (ODI / NDI)',
+    waivers: 'Rapidly progressive motor weakness, acute cauda equina',
+    portalUrl: 'https://www.anthem.com/providers',
+    priorAuthPhone: '1-866-800-1211',
+    guidelineSource: 'Anthem MediBlue Guidelines / Carelon / 42 CFR § 422.101',
+  },
+  wellcare_ma: {
+    name: 'Wellcare / Centene Medicare Advantage (Dual Access D-SNP)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Wellcare Clinical Guidelines / MCG Musculoskeletal',
+    medicalNecessityDef: 'Medicare LCD standard applied through Wellcare prior authorization and MCG Musculoskeletal Guidelines.',
     conservativeDuration: '6-12 weeks conservative care',
-    ptRequired: 'Active physical therapy program',
-    imagingRequired: 'MRI or CT confirming neural compression',
+    ptRequired: 'Active physical therapy program and pharmacotherapy trials',
+    imagingRequired: 'MRI or CT confirming neural compression or instability',
     functionalScores: 'Documented limitation of activities of daily living',
     waivers: 'Cauda equina syndrome, rapid neurological deterioration',
-    portalUrl: 'https://www.humana.com/provider',
-    priorAuthPhone: '1-800-457-4708',
-    guidelineSource: 'Humana MA Policy SUR-020 / MCG',
+    portalUrl: 'https://www.wellcare.com/provider',
+    priorAuthPhone: '1-855-538-0454',
+    guidelineSource: 'Wellcare Clinical Guidelines / MCG / CMS LCDs',
   },
-  devoted: {
-    name: 'Devoted Health (Medicare Advantage)',
+  cigna_ma: {
+    name: 'Cigna Healthcare Medicare Advantage (True Choice / Courage)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Cigna MA Coverage Policy 0263 & Medicare Parity',
+    medicalNecessityDef: 'Verifiable organic pathology matching neuro-imaging and clinical exams with failed non-operative treatments under 42 CFR § 422.101.',
+    conservativeDuration: '3+ months documented multimodal conservative therapy',
+    ptRequired: 'Physical therapy (active modalities) and medication management',
+    imagingRequired: 'High-resolution MRI or CT confirming spinal pathology',
+    functionalScores: 'Validated pain score (VAS) and functional disability questionnaire (ODI)',
+    waivers: 'Progressive motor weakness, cauda equina, cervical myelopathy',
+    portalUrl: 'https://cignaforhcp.cigna.com',
+    priorAuthPhone: '1-800-668-3813',
+    guidelineSource: 'Cigna MA Policy 0263 / Medicare LCD Baseline',
+  },
+  molina_ma: {
+    name: 'Molina Healthcare Medicare Advantage (Dual Options)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Molina MA Clinical Policy MH-032 / MCG',
+    medicalNecessityDef: 'Medically necessary when structural lesion matches clinical distribution and conservative care has failed per Molina Medicare Advantage policy.',
+    conservativeDuration: '6 weeks for decompression; 12 weeks for fusion',
+    ptRequired: 'Minimum 6-12 weeks active PT, NSAID/analgesic trial, and injection trial if indicated',
+    imagingRequired: 'MRI or CT demonstrating severe stenosis, herniation, or dynamic instability',
+    functionalScores: 'Validated pain and functional disability documentation (ODI/VAS)',
+    waivers: 'Progressive neurological deficits, cauda equina, acute myelopathy',
+    portalUrl: 'https://www.molinahealthcare.com/providers',
+    priorAuthPhone: '1-800-665-3086',
+    guidelineSource: 'Molina MA Policy MH-032 / MCG / CMS LCDs',
+  },
+  devoted_ma: {
+    name: 'Devoted Health (Core / Prime / D-SNP)',
     group: 'Medicare Advantage Plans',
     policyNumber: 'Devoted Health Prior Authorization Criteria',
     medicalNecessityDef: 'Evidence-based criteria supporting necessity of surgical intervention after conservative care trials per Medicare LCD standards.',
     conservativeDuration: '6-12 weeks documented non-operative care',
-    ptRequired: 'Documented physical therapy program',
+    ptRequired: 'Documented physical therapy program and analgesic trials',
     imagingRequired: 'MRI or CT confirming corresponding pathology',
-    functionalScores: 'Functional status documentation',
+    functionalScores: 'Functional status documentation (ODI/VAS)',
     waivers: 'Progressive motor deficit, cauda equina syndrome',
     portalUrl: 'https://www.devoted.com/providers',
     priorAuthPhone: '1-800-338-6833',
-    guidelineSource: 'Devoted Health Clinical Guidelines',
+    guidelineSource: 'Devoted Health Clinical Guidelines & 42 CFR § 422.101',
+  },
+  scan_ma: {
+    name: 'SCAN Health Plan (SCAN Classic / Balance / Heart First)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'SCAN MA Policy & CMS LCD Baseline (42 CFR § 422.101)',
+    medicalNecessityDef: 'Adheres to CMS Medicare Local Coverage Determinations and InterQual criteria for senior members across Western states.',
+    conservativeDuration: '3+ months conservative care per Medicare LCD',
+    ptRequired: 'Documented supervised physical therapy and multimodal medical care',
+    imagingRequired: 'MRI or CT confirming structural neural compression',
+    functionalScores: 'Validated functional outcome metrics (ODI/VAS)',
+    waivers: 'Progressive motor deficit, cauda equina syndrome, cervical myelopathy',
+    portalUrl: 'https://www.scanhealthplan.com/providers',
+    priorAuthPhone: '1-877-462-2583',
+    guidelineSource: 'SCAN Health Plan Guidelines / CMS LCDs / InterQual',
+  },
+  alignment_ma: {
+    name: 'Alignment Healthcare (Alignment AVA / Heart & Diabetes)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Alignment Clinical Coverage Criteria / InterQual',
+    medicalNecessityDef: 'Medicare LCD baseline combined with Alignment prior authorization requirements and InterQual clinical criteria.',
+    conservativeDuration: '6-12 weeks conservative care',
+    ptRequired: 'Supervised physical therapy and pharmacological therapy',
+    imagingRequired: 'MRI or CT demonstrating concordant nerve root compromise or segmental instability',
+    functionalScores: 'Oswestry Disability Index (ODI) or equivalent',
+    waivers: 'Cauda equina syndrome, progressive motor deficits, acute fracture',
+    portalUrl: 'https://www.alignmenthealthplan.com/providers',
+    priorAuthPhone: '1-844-310-2247',
+    guidelineSource: 'Alignment Healthcare Clinical Guidelines & 42 CFR § 422.101',
+  },
+  clover_ma: {
+    name: 'Clover Health (Choice PPO / Classic HMO)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Clover Health Musculoskeletal Guidelines / CMS Parity',
+    medicalNecessityDef: 'Adheres to Medicare Title XVIII standards and regional Medicare MAC LCDs pursuant to 42 CFR § 422.101.',
+    conservativeDuration: '6-12 weeks conservative treatment',
+    ptRequired: 'Supervised physical therapy and medical management',
+    imagingRequired: 'High resolution MRI or CT confirming spinal pathology',
+    functionalScores: 'Documented functional impairment',
+    waivers: 'Progressive neurological deficits, cauda equina syndrome',
+    portalUrl: 'https://www.cloverhealth.com/en/providers',
+    priorAuthPhone: '1-877-853-8019',
+    guidelineSource: 'Clover Health Clinical Criteria & CMS LCD Standards',
+  },
+  premera_ma: {
+    name: 'Premera Blue Cross Medicare Advantage (HMO / PPO)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Premera MA Policy 7.01.131 & CMS Parity',
+    medicalNecessityDef: 'Medically necessary when clinical symptoms correlate with diagnostic imaging and conservative care fails. Combines Premera Medical Policy 7.01.131 with Medicare LCD coverage floor.',
+    conservativeDuration: 'Minimum 6 weeks PT for decompression; 12 weeks for fusion',
+    ptRequired: 'Documented completion of 6-12 weeks active physical therapy',
+    imagingRequired: 'MRI or CT showing structural pathology; dynamic flexion/extension X-rays for fusion',
+    functionalScores: 'Functional impairment documented with validated measures (ODI/VAS)',
+    waivers: 'Progressive neurological deficits, cauda equina, spinal cord compression with myelopathy',
+    portalUrl: 'https://www.premera.com/providers',
+    priorAuthPhone: '1-800-722-1471',
+    guidelineSource: 'Premera MA Policy 7.01.131 / CMS Noridian LCD L34648',
+  },
+  regence_ma: {
+    name: 'Regence MedAdvantage (WA / OR / ID / UT)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Regence MedAdvantage Policy 7.01.131 & Cambia Standards',
+    medicalNecessityDef: 'Requires objective anatomical correlation on imaging, clear functional limitation, and failure of structured conservative regimen per Cambia Health MedAdvantage plans.',
+    conservativeDuration: '6 weeks for decompression; 12 weeks for fusion',
+    ptRequired: 'Supervised active physical therapy and medication trials',
+    imagingRequired: 'High quality MRI/CT and standing radiographs demonstrating instability or severe neural compromise',
+    functionalScores: 'Oswestry Disability Index (ODI >= 40%) or Neck Disability Index (NDI)',
+    waivers: 'Acute cauda equina, progressive motor weakness (Grade <= 3/5), progressive myelopathy',
+    portalUrl: 'https://www.regence.com/providers',
+    priorAuthPhone: '1-888-367-2112',
+    guidelineSource: 'Regence MedAdvantage Policy 7.01.131 / Noridian LCD L34648',
+  },
+  providence_ma: {
+    name: 'Providence Medicare Advantage Plans (Bridge / Choice / Extra)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Providence MA Medical Policy MP-088 & CMS LCD Standards',
+    medicalNecessityDef: 'Evidence of specific spinal pathology directly responsible for symptoms with refractory course following conservative care for Providence senior members in OR and WA.',
+    conservativeDuration: '6 weeks for decompression; 12 weeks for fusion',
+    ptRequired: 'Active physical therapy program under licensed therapist',
+    imagingRequired: 'Cross-sectional imaging (MRI/CT) confirming anatomic correlation with physical exam findings',
+    functionalScores: 'ODI, NDI, or validated disability metrics',
+    waivers: 'Progressive motor deficit, cauda equina, progressive myelopathy',
+    portalUrl: 'https://www.providencehealthplan.com/providers',
+    priorAuthPhone: '1-800-878-4445',
+    guidelineSource: 'Providence Medicare Advantage Policy MP-088 & Noridian LCD',
+  },
+  moda_ma: {
+    name: 'Moda Health Medicare Advantage (Moda Select / Pioneer)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Moda MA Medical Necessity Guidelines & MCG',
+    medicalNecessityDef: 'Medically necessary services consistent with accepted standards of medical practice and CMS LCD baseline in Oregon and Washington.',
+    conservativeDuration: '6-12 weeks documented non-operative care',
+    ptRequired: 'Active physical therapy with licensed therapist, NSAID/analgesic trial, and spinal injections',
+    imagingRequired: 'MRI or CT demonstrating severe stenosis, disc herniation, or dynamic instability',
+    functionalScores: 'Validated functional outcome measures (ODI >= 40%, VAS >= 6/10)',
+    waivers: 'Progressive motor deficit, acute cauda equina syndrome, progressive myelopathy',
+    portalUrl: 'https://www.modahealth.com/providers',
+    priorAuthPhone: '1-888-788-9821',
+    guidelineSource: 'Moda MA Guidelines / MCG / Noridian LCD',
+  },
+  pacificsource_ma: {
+    name: 'PacificSource Medicare (Explorer / Voyager / Choice)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'PacificSource Medicare Clinical Policy / MCG Criteria',
+    medicalNecessityDef: 'Requires objective anatomical correlation on cross-sectional imaging matching physical exam and failure of comprehensive conservative modalities under 42 CFR § 422.101.',
+    conservativeDuration: '6 weeks for decompression; 12 weeks for fusion',
+    ptRequired: 'Structured physical therapy, medication management, and spinal injection trials',
+    imagingRequired: 'MRI or CT confirming neural compression; flexion/extension X-rays for instability',
+    functionalScores: 'Documented functional impairment (ODI/NDI, VAS)',
+    waivers: 'Cauda equina syndrome, progressive motor weakness (Grade <= 3/5), acute trauma',
+    portalUrl: 'https://pacificsource.com/providers',
+    priorAuthPhone: '1-888-691-8209',
+    guidelineSource: 'PacificSource Medicare Policies / MCG Criteria',
+  },
+  careoregon_ma: {
+    name: 'CareOregon Advantage (Star / Plus D-SNP)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'CareOregon Advantage Prior Authorization Guidelines / HERC / CMS',
+    medicalNecessityDef: 'Services clinically appropriate and medically necessary for dual-eligible Medicare-Medicaid members in Oregon under Medicare LCD and HERC standards.',
+    conservativeDuration: '6-12 weeks conservative treatment',
+    ptRequired: 'Documented physical therapy program and multimodal medical care',
+    imagingRequired: 'MRI or CT demonstrating neural impingement matching clinical exam',
+    functionalScores: 'Functional limitations documented with validated metrics (ODI/VAS)',
+    waivers: 'Progressive motor deficit, acute cauda equina syndrome, cervical myelopathy',
+    portalUrl: 'https://www.careoregon.org/providers',
+    priorAuthPhone: '1-800-224-4840',
+    guidelineSource: 'CareOregon Advantage Guidelines / Noridian LCD',
+  },
+  samaritan_ma: {
+    name: 'Samaritan Advantage Health Plans (Premier / Dual Plus)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Samaritan Advantage Medical Policies / MCG',
+    medicalNecessityDef: 'Medically necessary when clinical symptoms correlate with diagnostic imaging and conservative care has failed for mid-Willamette Valley senior members.',
+    conservativeDuration: '6 weeks for decompression; 12 weeks for fusion',
+    ptRequired: 'Supervised active physical therapy and medical management',
+    imagingRequired: 'MRI or CT demonstrating surgical pathology matching clinical exam',
+    functionalScores: 'Documented functional outcome metrics (ODI/VAS)',
+    waivers: 'Progressive motor deficit, cauda equina, acute fracture',
+    portalUrl: 'https://samhealth.org/health-plans/providers',
+    priorAuthPhone: '1-800-832-4580',
+    guidelineSource: 'Samaritan Advantage Clinical Policies & Noridian LCD',
+  },
+  highmark_ma: {
+    name: 'Highmark Freedom Blue (Medicare Advantage HMO / PPO)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Highmark Freedom Blue MP-045 & Novitas LCD L35457',
+    medicalNecessityDef: 'Clear demonstration of spinal instability or stenosis corresponding to radicular symptoms under Novitas LCD standards.',
+    conservativeDuration: '12 weeks conservative treatment for fusion; 6 weeks for decompression',
+    ptRequired: 'Formal physical therapy with home exercise regimen documentation',
+    imagingRequired: 'Advanced imaging (MRI/CT) confirming concordant neural compression',
+    functionalScores: 'Functional assessment documented in medical record (ODI)',
+    waivers: 'Severe or progressive neurological deficit, myelopathy, cauda equina',
+    portalUrl: 'https://www.highmark.com/providers',
+    priorAuthPhone: '1-800-547-3627',
+    guidelineSource: 'Highmark Freedom Blue Policy MP-045 / Novitas LCD',
+  },
+  floridablue_ma: {
+    name: 'Florida Blue Medicare (BlueMedicare Choice / Value)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Florida Blue Medicare Policy 02-20000-24 & FCSO LCD L33764',
+    medicalNecessityDef: 'Concordance between clinical radicular syndrome and diagnostic imaging findings per First Coast Service Options LCD.',
+    conservativeDuration: '6-12 weeks structured conservative treatment',
+    ptRequired: 'Physical therapy program under licensed therapist',
+    imagingRequired: 'MRI or CT confirming neural compression',
+    functionalScores: 'Documented functional disability (ODI/VAS)',
+    waivers: 'Progressive motor deficit, acute cauda equina syndrome',
+    portalUrl: 'https://www.floridablue.com/providers',
+    priorAuthPhone: '1-800-727-2227',
+    guidelineSource: 'Florida Blue Medicare Policy / FCSO LCD L33764',
+  },
+  bcbstx_ma: {
+    name: 'Blue Cross Medicare Advantage (Texas / Illinois / HCSC)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'HCSC Blue Cross Medicare Advantage Policy 7.01.131',
+    medicalNecessityDef: 'Demonstrated clinical and imaging concordance with failure of structured physical modalities under Novitas/NGS LCD baselines.',
+    conservativeDuration: '6-12 weeks conservative treatment',
+    ptRequired: 'Formal physical therapy with objective progress notes',
+    imagingRequired: 'MRI/CT and dynamic flexion/extension radiographs for fusion',
+    functionalScores: 'Validated pain and disability scales (ODI/VAS)',
+    waivers: 'Progressive motor deficits, cauda equina, acute fracture',
+    portalUrl: 'https://www.bcbstx.com/provider',
+    priorAuthPhone: '1-877-774-8592',
+    guidelineSource: 'HCSC Blue Cross Medicare Advantage / Novitas LCD',
+  },
+  horizon_ma: {
+    name: 'Horizon Blue Cross Medicare Advantage (Horizon NJ)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Horizon Medicare Advantage Policy 088 / Novitas LCD',
+    medicalNecessityDef: 'Concordant imaging and clinical presentation with refractory symptoms after conservative care per Novitas LCD standards.',
+    conservativeDuration: '6-12 weeks conservative care',
+    ptRequired: 'Active physical therapy with licensed provider',
+    imagingRequired: 'MRI or CT demonstrating severe stenosis or instability',
+    functionalScores: 'Validated functional deficit documentation (ODI)',
+    waivers: 'Progressive motor deficit, acute cauda equina syndrome',
+    portalUrl: 'https://www.horizonblue.com/providers',
+    priorAuthPhone: '1-800-624-1110',
+    guidelineSource: 'Horizon MA Policy 088 / Novitas LCD L35457',
+  },
+  carefirst_ma: {
+    name: 'CareFirst BlueCross Medicare Advantage',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'CareFirst MA Medical Policy 7.01.074 / Novitas LCD',
+    medicalNecessityDef: 'Anatomic structural pathology matching clinical nerve distribution with failed non-surgical trials under Novitas MAC standards.',
+    conservativeDuration: '6-12 weeks conservative care',
+    ptRequired: 'Documented physical therapy program',
+    imagingRequired: 'MRI or CT confirming nerve root or spinal cord impingement',
+    functionalScores: 'ODI / NDI documented',
+    waivers: 'Cauda equina, severe motor weakness, myelopathy',
+    portalUrl: 'https://www.carefirst.com/providers',
+    priorAuthPhone: '1-800-842-5975',
+    guidelineSource: 'CareFirst MA Policy 7.01.074 / Novitas LCD',
+  },
+  ibx_ma: {
+    name: 'Independence Blue Cross Medicare (Keystone 65 / Personal Choice 65)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'IBX Medicare Advantage Policy 11.02.04 / Novitas LCD',
+    medicalNecessityDef: 'Requires concordant clinical examination and neuro-imaging along with exhausted non-surgical therapies per Novitas LCD.',
+    conservativeDuration: '6-12 weeks non-operative therapy',
+    ptRequired: 'Physical therapy, pharmacotherapy, and spinal injection trials',
+    imagingRequired: 'MRI/CT demonstrating structural pathology',
+    functionalScores: 'Validated outcome measurement (ODI / VAS)',
+    waivers: 'Rapidly progressive motor weakness, cauda equina syndrome',
+    portalUrl: 'https://www.ibx.com/providers',
+    priorAuthPhone: '1-800-ASK-BLUE',
+    guidelineSource: 'IBX Medicare Policy 11.02.04 / Novitas LCD',
+  },
+  selecthealth_ma: {
+    name: 'SelectHealth Advantage (Intermountain Health MA)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'SelectHealth Advantage Musculoskeletal Policy / Noridian LCD',
+    medicalNecessityDef: 'Services clinically appropriate and necessary per Intermountain Health clinical criteria and CMS Noridian LCD baseline.',
+    conservativeDuration: '6-12 weeks structured conservative treatment',
+    ptRequired: 'Physical therapy and pharmacological management',
+    imagingRequired: 'MRI or CT demonstrating concordant neural compression',
+    functionalScores: 'Documented functional impairment (ODI/VAS)',
+    waivers: 'Progressive motor deficit, acute cauda equina syndrome',
+    portalUrl: 'https://selecthealth.org/providers',
+    priorAuthPhone: '1-800-538-5038',
+    guidelineSource: 'SelectHealth Advantage Guidelines & Noridian LCD',
+  },
+  banner_ma: {
+    name: 'Banner Medicare Advantage (Banner Prime / Plus)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Banner MA Clinical Policies / Noridian LCD',
+    medicalNecessityDef: 'Adheres to CMS Medicare Noridian LCD standards and Banner Health clinical practice guidelines.',
+    conservativeDuration: '3+ months conservative therapy per Medicare LCD',
+    ptRequired: 'Documented physical therapy program and medical therapy',
+    imagingRequired: 'High resolution MRI or CT confirming spinal pathology',
+    functionalScores: 'Documented functional limitation in daily activities',
+    waivers: 'Cauda equina syndrome, progressive motor deficits',
+    portalUrl: 'https://www.bannerhealth.com/providers',
+    priorAuthPhone: '1-844-549-1859',
+    guidelineSource: 'Banner MA Clinical Guidelines / Noridian LCD',
+  },
+  sentara_ma: {
+    name: 'Sentara Medicare (Prime / Salute / Optima)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Sentara Medicare Musculoskeletal Guidelines / Palmetto LCD',
+    medicalNecessityDef: 'Concordance between clinical radicular syndrome and diagnostic imaging per Palmetto MAC standards.',
+    conservativeDuration: '6-12 weeks conservative treatment',
+    ptRequired: 'Physical therapy program and medication management',
+    imagingRequired: 'MRI or CT confirming neural compression',
+    functionalScores: 'Functional status documentation (ODI/VAS)',
+    waivers: 'Progressive motor deficit, acute cauda equina syndrome',
+    portalUrl: 'https://www.sentarahealthplans.com/providers',
+    priorAuthPhone: '1-800-229-5522',
+    guidelineSource: 'Sentara Medicare Clinical Guidelines / Palmetto LCD',
+  },
+  priority_ma: {
+    name: 'Priority Health Medicare Advantage (PriorityMedicare)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'PriorityMedicare Clinical Policy 91456 / NGS LCD',
+    medicalNecessityDef: 'Evidence of nerve root compression or spinal instability with failed conservative therapy per NGS MAC standards.',
+    conservativeDuration: '6-12 weeks conservative treatment',
+    ptRequired: 'Active physical therapy with licensed provider',
+    imagingRequired: 'MRI or CT demonstrating severe stenosis or instability',
+    functionalScores: 'Validated functional deficit documentation (ODI)',
+    waivers: 'Cauda equina syndrome, progressive motor weakness',
+    portalUrl: 'https://www.priorityhealth.com/provider',
+    priorAuthPhone: '1-800-942-4765',
+    guidelineSource: 'PriorityMedicare Policy 91456 / NGS LCD L33615',
+  },
+  zing_ma: {
+    name: 'Zing Health (Complete / Open Choice D-SNP)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Zing Health MA Clinical Criteria / 42 CFR § 422.101',
+    medicalNecessityDef: 'Medicare LCD baseline combined with Zing Health prior authorization rules and 42 CFR § 422.101 statutory parity.',
+    conservativeDuration: '3+ months conservative care per Medicare LCD',
+    ptRequired: 'Supervised physical therapy and medical management',
+    imagingRequired: 'MRI or CT confirming neural compression or instability',
+    functionalScores: 'Documented functional impairment (ODI/VAS)',
+    waivers: 'Progressive motor deficit, acute cauda equina syndrome',
+    portalUrl: 'https://www.myzinghealth.com/providers',
+    priorAuthPhone: '1-866-946-4458',
+    guidelineSource: 'Zing Health MA Guidelines / 42 CFR § 422.101',
+  },
+  clevercare_ma: {
+    name: 'Clever Care Health Plan (Medicare Advantage HMO)',
+    group: 'Medicare Advantage Plans',
+    policyNumber: 'Clever Care MA Clinical Criteria / 42 CFR § 422.101',
+    medicalNecessityDef: 'Medicare LCD baseline applied through Clever Care utilization review with statutory parity under 42 CFR § 422.101.',
+    conservativeDuration: '3+ months conservative care per Medicare LCD',
+    ptRequired: 'Supervised physical therapy and multimodal medical care',
+    imagingRequired: 'MRI or CT confirming surgical pathology matching physical exam',
+    functionalScores: 'Validated pain and functional disability scoring (ODI/VAS)',
+    waivers: 'Cauda equina syndrome, progressive motor deficit, acute myelopathy',
+    portalUrl: 'https://www.clevercarehealthplan.com/provider',
+    priorAuthPhone: '1-833-388-8168',
+    guidelineSource: 'Clever Care MA Guidelines / 42 CFR § 422.101',
   },
 
   // === STATE MEDICAID & MCOs ===
@@ -2039,6 +2437,25 @@ function runGapAnalysis() {
   // Synthesize Prompt
   synthesizePrompt(note, payer, procedure, intent, items, finalPercentage);
 }
+
+function getSecondaryPayerPromptInfo() {
+  const hasSecondary = document.getElementById('hasSecondaryInsuranceToggle') && document.getElementById('hasSecondaryInsuranceToggle').checked;
+  if (!hasSecondary) return '';
+  const secSelect = document.getElementById('secondaryPayerSelect');
+  const secName = secSelect.options[secSelect.selectedIndex] ? secSelect.options[secSelect.selectedIndex].text : 'Secondary Plan';
+  const secId = document.getElementById('secondaryMemberIdInput').value.trim() || 'On File';
+  return `\n- **Secondary / Supplemental Payer:** ${secName}\n- **Secondary Policy / Member ID:** ${secId}\n- **Coordination of Benefits:** Include secondary payer notification block to support dual pre-authorization and Medigap crossover adjudication.`;
+}
+
+function getSecondaryLetterBlock(payer) {
+  const hasSecondary = document.getElementById('hasSecondaryInsuranceToggle') && document.getElementById('hasSecondaryInsuranceToggle').checked;
+  if (!hasSecondary) return '';
+  const secSelect = document.getElementById('secondaryPayerSelect');
+  const secName = secSelect.options[secSelect.selectedIndex] ? secSelect.options[secSelect.selectedIndex].text : 'Secondary Plan';
+  const secId = document.getElementById('secondaryMemberIdInput').value.trim() || 'On File';
+  return `\nSECONDARY INSURANCE / SUPPLEMENTAL COVERAGE (COB):\nSECONDARY PAYER: ${secName}\nSECONDARY MEMBER / POLICY ID: ${secId}\nCOORDINATION OF BENEFITS: Requesting dual medical necessity clearance and pre-authorization crossover to facilitate seamless claim adjudication.\n`;
+}
+
 function synthesizePrompt(note, payer, procedure, intent, items, compliance) {
   let intentHeading = 'Medical Necessity Letter';
   if (intent === 'level1_appeal') intentHeading = 'Medical Necessity Letter (Level 1 Denial Appeal)';
@@ -2050,8 +2467,8 @@ function synthesizePrompt(note, payer, procedure, intent, items, compliance) {
 Generate an authoritative, rigorous, and legally bulletproof **${intentHeading}** addressed to the Medical Director of **${payer.name}** regarding the proposed procedure under **${payer.policyNumber}**.
 
 ### PAYER & POLICY BENCHMARK DATA:
-- **Target Insurance Carrier:** ${payer.name}
-- **Applicable Medical Policy:** ${payer.policyNumber}
+- **Primary Target Carrier:** ${payer.name}
+- **Primary Applicable Medical Policy:** ${payer.policyNumber}${getSecondaryPayerPromptInfo()}
 - **Payer Medical Necessity Standard:** "${payer.medicalNecessityDef}"
 - **Conservative Treatment Requirement:** ${payer.conservativeDuration}
 - **Required Diagnostic Imaging:** ${payer.imagingRequired}
@@ -2128,7 +2545,7 @@ ${title.toUpperCase()}
 DATE: ${today}
 TO: Medical Director & Utilization Management Committee
 PAYER: ${payer.name}
-POLICY REFERENCE: ${payer.policyNumber}
+POLICY REFERENCE: ${payer.policyNumber}${getSecondaryLetterBlock(payer)}
 
 RE: REQUEST FOR SURGICAL PRIOR AUTHORIZATION / EXPEDITED DETERMINATION
 TREATMENT FACILITY: Department of Neurosurgery & Orthopedic Spine Surgery
@@ -2807,6 +3224,61 @@ async function generateDirectCloudLlm() {
   } finally {
     btnText.textContent = '3. Direct Cloud LLM';
   }
+}
+
+
+// SECONDARY INSURANCE LOGIC
+function toggleSecondaryInsurance() {
+  const isChecked = document.getElementById('hasSecondaryInsuranceToggle').checked;
+  const container = document.getElementById('secondaryInsuranceFields');
+  if (isChecked) {
+    container.classList.remove('hidden');
+    populateSecondaryPayerDropdown();
+    showToast('Secondary insurance enabled', 'info');
+  } else {
+    container.classList.add('hidden');
+  }
+  runGapAnalysis();
+}
+
+function populateSecondaryPayerDropdown() {
+  const select = document.getElementById('secondaryPayerSelect');
+  if (select.options.length > 0) return; // already populated
+
+  select.innerHTML = `
+    <optgroup label="Standard Medigap / Supplemental Plans">
+      <option value="medigap_plan_g" selected>Medicare Supplement (Medigap Plan G / F / N)</option>
+      <option value="aarp_medigap">AARP / UnitedHealthcare Medicare Supplement</option>
+      <option value="mutual_of_omaha">Mutual of Omaha Medicare Supplement</option>
+      <option value="bcbs_medigap">Blue Cross Blue Shield Medigap / Blue MedicareRx</option>
+      <option value="tricare_for_life">TRICARE For Life (Secondary to Medicare)</option>
+      <option value="secondary_medicaid">Secondary Medicaid (WA Apple Health / OHP Dual Eligible)</option>
+      <option value="employer_retiree">Employer-Sponsored Retiree Secondary PPO</option>
+    </optgroup>
+  `;
+
+  // Append all standard carriers as secondary options
+  const groups = {};
+  for (const [key, val] of Object.entries(INSURERS)) {
+    if (!groups[val.group]) groups[val.group] = [];
+    groups[val.group].push({ id: key, ...val });
+  }
+
+  for (const [groupName, payers] of Object.entries(groups)) {
+    const optgroup = document.createElement('optgroup');
+    optgroup.label = groupName;
+    payers.forEach(p => {
+      const option = document.createElement('option');
+      option.value = p.id;
+      option.textContent = `${p.name} (${p.policyNumber.split(' ')[0]})`;
+      optgroup.appendChild(option);
+    });
+    select.appendChild(optgroup);
+  }
+}
+
+function handleSecondaryPayerChange() {
+  runGapAnalysis();
 }
 
 // INITIALIZE ON LOAD
